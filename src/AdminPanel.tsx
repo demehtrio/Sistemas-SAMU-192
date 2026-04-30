@@ -1,0 +1,245 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { Trash2, Users, FileText, AlertTriangle } from 'lucide-react';
+
+export const AdminPanel: React.FC = () => {
+  const { profile } = useAuth();
+  const [users, setUsers] = useState<any[]>([]);
+  const [permutas, setPermutas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'users' | 'permutas'>('users');
+
+  useEffect(() => {
+    if (profile?.role !== 'coordenacao') return;
+
+    const loadData = () => {
+      const savedUsers = localStorage.getItem('samu_registered_users');
+      const usersList = savedUsers ? JSON.parse(savedUsers) : [];
+      setUsers(usersList.map((u: any) => ({
+        id: u.uid || u.id,
+        name: u.name,
+        email: u.email,
+        cargo: u.cargo || u.role,
+        cpf: u.cpf || 'Não inf.',
+        role: u.role
+      })));
+
+      const savedPermutas = localStorage.getItem('samu_permutas');
+      setPermutas(savedPermutas ? JSON.parse(savedPermutas) : []);
+      
+      setLoading(false);
+    };
+
+    loadData();
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
+  }, [profile]);
+
+  const [confirmDelete, setConfirmDelete] = useState<{ type: 'user' | 'permuta', id: string, message: string } | null>(null);
+
+  const handleDeleteUser = async (userId: string) => {
+    setConfirmDelete({
+      type: 'user',
+      id: userId,
+      message: 'Tem certeza que deseja excluir este usuário localmente?'
+    });
+  };
+
+  const handleDeletePermuta = async (permutaId: string) => {
+    setConfirmDelete({
+      type: 'permuta',
+      id: permutaId,
+      message: 'Tem certeza que deseja excluir esta permuta localmente?'
+    });
+  };
+
+  const confirmAction = async () => {
+    if (!confirmDelete) return;
+    
+    try {
+      if (confirmDelete.type === 'user') {
+        const savedUsers = localStorage.getItem('samu_registered_users');
+        if (savedUsers) {
+          const registry = JSON.parse(savedUsers);
+          const newList = registry.filter((u: any) => (u.uid || u.id) !== confirmDelete.id);
+          localStorage.setItem('samu_registered_users', JSON.stringify(newList));
+        }
+        window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Usuário excluído localmente.' }));
+      } else {
+        const savedPermutas = localStorage.getItem('samu_permutas');
+        if (savedPermutas) {
+          const allPermutas = JSON.parse(savedPermutas);
+          const newList = allPermutas.filter((p: any) => p.id !== confirmDelete.id);
+          localStorage.setItem('samu_permutas', JSON.stringify(newList));
+        }
+        window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída localmente.' }));
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
+  if (profile?.role !== 'coordenacao') {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        Acesso negado. Apenas coordenadores podem acessar esta área.
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="p-6 border-b border-gray-200 bg-red-50">
+        <div className="flex items-center text-samu-red mb-2">
+          <AlertTriangle className="w-6 h-6 mr-2" />
+          <h2 className="text-xl font-black uppercase tracking-tight">Painel Administrativo</h2>
+        </div>
+        <p className="text-sm font-bold text-red-600">
+          Atenção: A exclusão de dados é permanente e não pode ser desfeita.
+        </p>
+      </div>
+
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`flex-1 py-4 px-4 text-xs font-black uppercase tracking-widest flex items-center justify-center transition-all ${
+            activeTab === 'users' ? 'border-b-4 border-samu-blue text-samu-blue bg-blue-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <Users className="w-4 h-4 mr-2" />
+          Usuários ({users.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('permutas')}
+          className={`flex-1 py-4 px-4 text-xs font-black uppercase tracking-widest flex items-center justify-center transition-all ${
+            activeTab === 'permutas' ? 'border-b-4 border-samu-blue text-samu-blue bg-blue-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Permutas ({permutas.length})
+        </button>
+      </div>
+
+      <div className="p-0">
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Carregando dados...</div>
+        ) : activeTab === 'users' ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPF</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo/Role</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.cpf}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {user.cargo} <span className="text-xs bg-gray-100 px-2 py-1 rounded-full ml-2">{user.role}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleDeleteUser(user.id)}
+                        disabled={user.id === profile.uid}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title={user.id === profile.uid ? "Você não pode excluir a si mesmo" : "Excluir usuário"}
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">Nenhum usuário encontrado.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data/Turno</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Substituto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {permutas.map((permuta) => (
+                  <tr key={permuta.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {permuta.date} <br/>
+                      <span className="text-xs text-gray-500">{permuta.shift}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permuta.requesterName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{permuta.substituteName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        permuta.status === 'aprovada' ? 'bg-green-100 text-green-800' : 
+                        permuta.status === 'rejeitada' ? 'bg-red-100 text-red-800' : 
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {permuta.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleDeletePermuta(permuta.id)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Excluir permuta"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {permutas.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Nenhuma permuta encontrada.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Exclusão</h3>
+            <p className="text-sm text-gray-600 mb-6">{confirmDelete.message}</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmAction}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-samu-red: #C8102E;
+  --color-samu-orange: #FF8C00;
+  --color-samu-blue: #000080;
+  --color-samu-blue-hover: #000066;
+  --color-samu-white: #FFFFFF;
+}
