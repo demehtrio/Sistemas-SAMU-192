@@ -1,7 +1,8 @@
 import React, { useState, useEffect, Component } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance, AlertTriangle, Trash2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance, AlertTriangle, Trash2, AlertCircle, ArrowLeft, History } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { twMerge } from 'tailwind-merge';
 import { AdminPanel } from './AdminPanel';
@@ -78,9 +79,13 @@ const SystemSignatureButton: React.FC<{ onClick?: () => void; className?: string
     type={type}
     onClick={onClick}
     disabled={loading}
-    className={twMerge(`flex items-center justify-center px-4 py-2 border-2 border-samu-blue text-sm font-bold rounded-md text-samu-blue bg-white hover:bg-blue-50 transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50`, className)}
+    className={twMerge(`flex items-center justify-center px-6 py-3 border-2 border-samu-blue text-xs font-black uppercase tracking-widest rounded-xl text-samu-blue bg-white hover:bg-samu-blue hover:text-white transition-all shadow-sm hover:shadow-lg active:scale-95 disabled:opacity-50`, className)}
   >
-    <Check className="w-5 h-5 mr-2" />
+    {loading ? (
+      <div className="h-5 w-5 border-2 border-current border-t-transparent animate-spin rounded-full mr-2" />
+    ) : (
+      <Check className="w-5 h-5 mr-2" />
+    )}
     {loading ? 'Assinando...' : (label || 'Confirmar e Assinar')}
   </button>
 );
@@ -482,86 +487,97 @@ export const Dashboard: React.FC = () => {
 
   if (user && !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-          <div className="bg-orange-100 p-3 rounded-full w-fit mx-auto mb-4">
-            <User className="h-8 w-8 text-orange-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Perfil Incompleto</h2>
-          <p className="text-gray-600 mb-6">
-            Seu cadastro foi iniciado, mas os dados do seu perfil não foram encontrados. 
-            Isso pode acontecer se houve uma falha na conexão durante o cadastro.
-          </p>
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.href = '/#/signup'}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-            >
-              Tentar Cadastrar Novamente
-            </button>
-            <button
-              onClick={() => signOut()}
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-            >
-              Sair da Conta
-            </button>
-          </div>
-          <p className="mt-4 text-xs text-gray-400">
-            ID: {user.uid}
-          </p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border border-slate-100"
+      >
+        <div className="bg-orange-100 p-4 rounded-2xl w-fit mx-auto mb-6">
+          <User className="h-10 w-10 text-orange-600" />
         </div>
-      </div>
+        <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Perfil Incompleto</h2>
+        <p className="text-gray-600 mb-8 leading-relaxed">
+          Seu cadastro foi iniciado, mas os dados do seu perfil não foram encontrados. 
+          Isso pode acontecer se houve uma falha na conexão durante o cadastro.
+        </p>
+        <div className="space-y-4">
+          <button
+            onClick={() => window.location.href = '/#/signup'}
+            className="w-full flex justify-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-orange-600 hover:bg-orange-700 transition-all active:scale-95"
+          >
+            Tentar Cadastrar Novamente
+          </button>
+          <button
+            onClick={() => signOut()}
+            className="w-full flex justify-center py-4 px-6 border border-slate-200 rounded-xl shadow-sm text-xs font-black uppercase tracking-widest text-slate-700 bg-white hover:bg-slate-50 transition-all active:scale-95"
+          >
+            Sair da Conta
+          </button>
+        </div>
+        <p className="mt-8 text-[10px] text-slate-400 font-mono">
+          ID: {user.uid}
+        </p>
+      </motion.div>
+    </div>
     );
   }
 
   if (!profile) return null; // Safety check
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-samu-blue shadow-md">
+    <div className="min-h-screen bg-slate-50">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md bg-white/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center space-x-3">
+          <div className="flex justify-between h-20">
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/')}
-                className="p-2 mr-1 hover:bg-white/10 rounded-full text-white transition-colors flex items-center justify-center"
+                className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-600 transition-all flex items-center justify-center border border-transparent hover:border-slate-200"
                 title="Voltar ao Início"
               >
                 <ArrowLeft className="h-6 w-6" />
               </button>
               <div 
-                className="bg-white p-1 rounded-full shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                className="bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:scale-105 active:scale-95 transition-all"
                 onClick={() => navigate('/')}
                 title="Voltar ao Painel"
               >
                 <SamuLogo className="h-10 w-10 object-contain" />
               </div>
               <div className="flex flex-col justify-center">
-                <h1 className="text-lg sm:text-xl font-bold text-white tracking-wide leading-tight">Sistema de Permutas</h1>
-                <span className="text-[10px] sm:text-xs text-samu-orange font-black tracking-widest uppercase">SAMU 192 - Serra Talhada/PE</span>
+                <h1 className="text-xl font-black text-samu-blue tracking-tight leading-none">SAMU 192</h1>
+                <span className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase mt-1">Serra Talhada / PE</span>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               {profile?.role === 'coordenacao' && (
                 <button
                   onClick={() => {
                     setIsAdminView(!isAdminView);
                     setIsCreating(false);
                   }}
-                  className="hidden sm:flex items-center space-x-1 text-white bg-samu-red hover:bg-red-800 px-3 py-1.5 rounded-full transition-colors"
+                  className={twMerge(
+                    "hidden sm:flex items-center space-x-2 px-4 py-2 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest shadow-sm",
+                    isAdminView 
+                      ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      : "bg-samu-red/10 text-samu-red hover:bg-samu-red hover:text-white"
+                  )}
                   title="Painel de Administração"
                 >
                   <AlertTriangle className="h-4 w-4" />
-                  <span className="text-sm font-medium">{isAdminView ? 'Sair Admin' : 'Admin'}</span>
+                  <span>{isAdminView ? 'Sair Admin' : 'Admin'}</span>
                 </button>
               )}
-              <div className="hidden sm:flex items-center space-x-2 text-white bg-white/20 px-3 py-1.5 rounded-full">
-                <User className="h-4 w-4" />
-                <span className="text-sm font-medium">{profile?.name}</span>
+              <div className="hidden sm:flex items-center space-x-3 text-slate-700 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200 shadow-inner">
+                <div className="w-6 h-6 bg-samu-blue rounded-full flex items-center justify-center text-[10px] text-white font-black">
+                  {profile?.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-black uppercase tracking-tight">{profile?.name.split(' ')[0]}</span>
               </div>
               <button
                 onClick={signOut}
-                className="flex items-center space-x-1 text-sm text-white hover:text-red-100 hover:bg-red-700/50 px-3 py-2 rounded-md transition-colors font-medium"
+                className="flex items-center space-x-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-all"
               >
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Sair</span>
@@ -571,463 +587,562 @@ export const Dashboard: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 pb-24 sm:px-6 lg:px-8">
-        {isAdminView ? (
-          <AdminPanel />
-        ) : isCreating ? (
-          <CreatePermuta onCancel={() => setIsCreating(false)} />
-        ) : (
-          <div className="space-y-8">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black text-samu-blue uppercase tracking-tight">Painel de Permutas</h2>
-              <button
-                onClick={() => setIsCreating(true)}
-                className="inline-flex items-center px-6 py-2.5 border border-transparent rounded-xl shadow-lg text-sm font-black uppercase tracking-widest text-white bg-samu-orange hover:bg-orange-600 transition-all transform hover:scale-105 active:scale-95"
-              >
-                <PlusCircle className="mr-2 -ml-1 h-5 w-5" />
-                Nova Permuta
-              </button>
-            </div>
+      <main className="max-w-7xl mx-auto py-8 pb-32 px-4 sm:px-6 lg:px-8">
+        <AnimatePresence mode="wait">
+          {isAdminView ? (
+            <motion.div
+              key="admin"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AdminPanel />
+            </motion.div>
+          ) : isCreating ? (
+            <motion.div
+              key="create"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CreatePermuta onCancel={() => setIsCreating(false)} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="dashboard"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-12"
+            >
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tightest">Gestão de Permutas</h2>
+                  <p className="text-slate-500 text-sm font-medium mt-1 uppercase tracking-widest">Controle operacional e trocas de plantões</p>
+                </div>
+                <button
+                  onClick={() => setIsCreating(true)}
+                  className="inline-flex items-center px-8 py-4 border border-transparent rounded-2xl shadow-xl hover:shadow-2xl text-xs font-black uppercase tracking-widest text-white bg-samu-orange hover:bg-orange-600 transition-all transform hover:-translate-y-1 active:translate-y-0"
+                >
+                  <PlusCircle className="mr-3 -ml-1 h-6 w-6" />
+                  Nova Permuta
+                </button>
+              </div>
 
-            {/* Painel da Coordenação (Apenas para coordenadores) */}
+            {/* Painel da Coordenação */}
             {profile.role === 'coordenacao' && (
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg border-2 border-samu-red/20">
-                <div className="px-4 py-5 sm:px-6 bg-red-50 border-b border-red-100 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-red-100 p-2 rounded-full">
-                      <Check className="h-6 w-6 text-samu-red" />
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white shadow-2xl shadow-samu-red/5 overflow-hidden rounded-[2rem] border border-samu-red/20"
+              >
+                <div className="px-8 py-8 bg-gradient-to-r from-red-50 to-white border-b border-red-100 flex items-center justify-between">
+                  <div className="flex items-center space-x-5">
+                    <div className="bg-samu-red p-4 rounded-2xl shadow-lg shadow-samu-red/20">
+                      <Check className="h-7 w-7 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg leading-6 font-black text-samu-red uppercase tracking-tight">
+                      <h3 className="text-xl font-black text-slate-900 tracking-tight">
                         Aprovações Pendentes
                       </h3>
-                      <p className="mt-1 max-w-2xl text-xs font-bold text-red-700 uppercase tracking-tighter">
-                        Validação final da coordenação para permutas assinadas.
+                      <p className="mt-1 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                        Validação final da coordenação
                       </p>
                     </div>
                   </div>
-                  <span className="bg-samu-red text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Coordenador</span>
+                  <span className="bg-samu-red/10 text-samu-red text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-samu-red/20">Coordenador</span>
                 </div>
-                <ul className="divide-y divide-gray-200">
+                <ul className="divide-y divide-slate-100">
                   {permutasCoordenacao.length === 0 ? (
-                    <li className="px-4 py-4 sm:px-6 text-gray-500 text-sm italic">Nenhuma permuta aguardando aprovação da coordenação.</li>
+                    <li className="px-8 py-12 text-slate-400 text-sm font-medium italic text-center">Nenhuma permuta aguardando aprovação da coordenação.</li>
                   ) : (
                     permutasCoordenacao.map((p) => (
-                      <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <div className="flex items-center space-x-2 mb-1">
-                              {p.unitType && <span className="text-[10px] font-bold text-white bg-indigo-600 px-2 py-0.5 rounded-full">{p.unitType}</span>}
-                              <p className="text-sm font-bold text-indigo-900">
-                                {p.requesterName} ↔ {p.substituteName}
+                      <motion.li 
+                        whileHover={{ backgroundColor: "rgba(248, 250, 252, 1)" }}
+                        key={p.id} 
+                        className="px-8 py-6 transition-all"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center space-x-3">
+                              {p.unitType && <span className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1 rounded-lg uppercase tracking-widest">{p.unitType}</span>}
+                              <p className="text-lg font-black text-slate-900 tracking-tight">
+                                {p.requesterName} <span className="text-slate-300 mx-1 font-light">↔</span> {p.substituteName}
                               </p>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-                              <p><span className="font-semibold">Solicitante:</span> {p.requesterDate} ({p.requesterShift}) - {p.requesterRole}</p>
-                              <p><span className="font-semibold">Substituto:</span> {p.date} ({p.shift}) - {p.substituteRole}</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium">
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-slate-400 uppercase tracking-widest text-[9px] font-bold mb-1">Solicitante</p>
+                                <p className="text-slate-900">{p.requesterDate} <span className="text-slate-300">•</span> {p.requesterShift}</p>
+                                <p className="text-slate-500 mt-0.5">{p.requesterRole}</p>
+                              </div>
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <p className="text-slate-400 uppercase tracking-widest text-[9px] font-bold mb-1">Substituto</p>
+                                <p className="text-slate-900">{p.date} <span className="text-slate-300">•</span> {p.shift}</p>
+                                <p className="text-slate-500 mt-0.5">{p.substituteRole}</p>
+                              </div>
                               {p.reason && (
-                                <p className="sm:col-span-2 mt-1 italic text-gray-500">
-                                  <span className="font-semibold not-italic">Motivo:</span> {p.reason}
-                                </p>
+                                <div className="sm:col-span-2 text-slate-500 bg-slate-50/50 p-3 rounded-xl border border-dashed border-slate-200 italic">
+                                  <span className="font-black not-italic uppercase tracking-tighter mr-2 text-[9px] text-slate-400">Motivo:</span> {p.reason}
+                                </div>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-3">
                             <button
                               onClick={() => initiateSign(p.id, 'approved')}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700"
+                              className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 rounded-xl shadow-lg shadow-green-600/10 text-[10px] font-black uppercase tracking-widest text-white bg-green-600 hover:bg-green-700 transition-all active:scale-95"
                             >
                               Aprovar
                             </button>
                             <button
                               onClick={() => initiateSign(p.id, 'rejected')}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700"
+                              className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 rounded-xl shadow-lg shadow-red-600/10 text-[10px] font-black uppercase tracking-widest text-white bg-red-600 hover:bg-red-700 transition-all active:scale-95"
                             >
                               Rejeitar
                             </button>
+                          </div>
+                        </div>
+                      </motion.li>
+                    ))
+                  )}
+                </ul>
+              </motion.div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Permutas Recebidas */}
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-white shadow-xl shadow-slate-200/50 overflow-hidden rounded-[2.5rem] border border-slate-100"
+              >
+                <div className="px-8 py-8 bg-slate-50 flex items-center space-x-5">
+                  <div className="bg-samu-blue p-4 rounded-3xl shadow-lg shadow-samu-blue/20">
+                    <Inbox className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                      Recebidas
+                    </h3>
+                    <p className="mt-0.5 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                      Solicitadas por colegas
+                    </p>
+                  </div>
+                </div>
+                <ul className="divide-y divide-slate-50">
+                  {permutasRecebidas.length === 0 ? (
+                    <li className="px-8 py-16 text-slate-400 text-sm font-medium italic text-center">Nenhuma permuta recebida.</li>
+                  ) : (
+                    permutasRecebidas.map((p) => (
+                      <li key={p.id} className="px-8 py-8 hover:bg-slate-50/50 transition-all">
+                        <div className="flex flex-col gap-6">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                                  <User className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-slate-900 tracking-tight">{p.requesterName}</p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase">{p.requesterRole}</p>
+                                </div>
+                              </div>
+                              {p.unitType && <span className="text-[9px] font-black text-samu-orange bg-samu-orange/10 px-3 py-1 rounded-full border border-samu-orange/20 uppercase tracking-widest">{p.unitType}</span>}
+                            </div>
+
+                            <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100">
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sua Escala</p>
+                                <p className="text-xs font-bold text-slate-900">{p.date}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">{p.shift}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Solicitante</p>
+                                <p className="text-xs font-bold text-slate-900">{p.requesterDate}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">{p.requesterShift}</p>
+                              </div>
+                            </div>
+                          
+                          <div className="flex items-center justify-between gap-4 pt-2">
+                            {p.status === 'pending' || p.status === 'pendente_substituto' ? (
+                              <div className="flex items-center gap-3 w-full">
+                                <button
+                                  onClick={() => initiateSign(p.id, 'approved')}
+                                  className="flex-1 py-3 bg-samu-blue text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-samu-blue/10 hover:bg-samu-blue-hover active:scale-95 transition-all"
+                                >
+                                  Aceitar
+                                </button>
+                                <button
+                                  onClick={() => initiateSign(p.id, 'rejected')}
+                                  className="flex-1 py-3 bg-white text-slate-400 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-red-500 hover:border-red-100 active:scale-95 transition-all"
+                                >
+                                  Recusar
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between w-full">
+                                <span className={twMerge(
+                                  "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border",
+                                  p.status === 'aprovada' || p.status === 'approved' ? 'bg-green-50 text-green-600 border-green-100' : 
+                                  p.status === 'pendente_coordenacao' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                  'bg-red-50 text-red-600 border-red-100'
+                                )}>
+                                  {p.status === 'aprovada' || p.status === 'approved' ? 'Aprovada' : 
+                                   p.status === 'pendente_coordenacao' ? 'Aguardando Coord' :
+                                   'Rejeitada'}
+                                </span>
+                                <div className="flex gap-2">
+                                  {p.status.includes('aprov') && (
+                                    <div className="flex gap-1.5 focus-within:ring-2 focus-within:ring-slate-100 rounded-full p-1">
+                                      <button onClick={() => generatePDF(p)} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all" title="Gerar PDF">
+                                        <FileText className="h-4 w-4" />
+                                      </button>
+                                      <button onClick={() => shareWhatsApp(p)} className="p-2 text-green-500 hover:bg-green-50 rounded-xl transition-all" title="WhatsApp">
+                                        <MessageCircle className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {profile?.role === 'coordenacao' && (
+                                    <button 
+                                      onClick={() => handleDeletePermuta(p.id)} 
+                                      className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-all"
+                                      title="Excluir"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </li>
                     ))
                   )}
                 </ul>
-              </div>
-            )}
+              </motion.div>
 
-            {/* Permutas Recebidas (Ações pendentes) */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-              <div className="px-4 py-5 sm:px-6 bg-blue-50 border-b border-blue-100 flex items-center space-x-3">
-                <div className="bg-blue-100 p-2 rounded-full">
-                  <Inbox className="h-6 w-6 text-samu-blue" />
-                </div>
-                <div>
-                  <h3 className="text-lg leading-6 font-black text-samu-blue uppercase tracking-tight">
-                    Recebidas (Aguardando Você)
-                  </h3>
-                  <p className="mt-1 max-w-2xl text-xs font-bold text-samu-blue/60 uppercase tracking-tighter">
-                    Trocas solicitadas por seus colegas.
-                  </p>
-                </div>
-              </div>
-              <ul className="divide-y divide-gray-200">
-                {permutasRecebidas.length === 0 ? (
-                  <li className="px-4 py-4 sm:px-6 text-gray-500 text-sm">Nenhuma permuta recebida.</li>
-                ) : (
-                  permutasRecebidas.map((p) => (
-                    <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <div className="flex items-center space-x-2 mb-1">
-                            {p.unitType && <span className="text-[10px] font-bold text-white bg-orange-500 px-2 py-0.5 rounded-full">{p.unitType}</span>}
-                            <p className="text-sm font-bold text-orange-900">
-                              Solicitante: {p.requesterName} ({p.requesterRole})
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-                            <p><span className="font-semibold">Sua Escala:</span> {p.date} ({p.shift})</p>
-                            <p><span className="font-semibold">Escala Solicitante:</span> {p.requesterDate} ({p.requesterShift})</p>
-                            {p.reason && (
-                              <p className="sm:col-span-2 mt-1 italic text-gray-500">
-                                <span className="font-semibold not-italic">Motivo:</span> {p.reason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {p.status === 'pending' || p.status === 'pendente_substituto' ? (
-                            <>
-                              <button
-                                onClick={() => initiateSign(p.id, 'approved')}
-                                className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-green-600 hover:bg-green-700"
-                                title="Assinar/Aprovar"
-                              >
-                                <Check className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={() => initiateSign(p.id, 'rejected')}
-                                className="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700"
-                                title="Rejeitar"
-                              >
-                                <X className="h-5 w-5" />
-                              </button>
-                            </>
-                          ) : (
-                            <div className="flex items-center space-x-2">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                p.status === 'aprovada' || p.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                p.status === 'pendente_coordenacao' ? 'bg-indigo-100 text-indigo-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {p.status === 'aprovada' || p.status === 'approved' ? 'Aprovada' : 
-                                 p.status === 'pendente_coordenacao' ? 'Aguardando Coordenação' :
-                                 'Rejeitada'}
-                              </span>
-                              <div className="flex space-x-2 ml-2">
-                                {(p.status === 'aprovada' || p.status === 'approved') && (
-                                  <>
-                                    <button onClick={() => generatePDF(p)} className="p-1.5 text-white bg-indigo-500 hover:bg-indigo-600 rounded-full shadow-sm transition-colors" title="Gerar PDF">
-                                      <FileText className="h-4 w-4" />
-                                    </button>
-                                    <button onClick={() => shareWhatsApp(p)} className="p-1.5 text-white bg-green-500 hover:bg-green-600 rounded-full shadow-sm transition-colors" title="Enviar por WhatsApp">
-                                      <MessageCircle className="h-4 w-4" />
-                                    </button>
-                                    <button onClick={() => shareEmail(p)} className="p-1.5 text-white bg-blue-500 hover:bg-blue-600 rounded-full shadow-sm transition-colors" title="Enviar por E-mail">
-                                      <Mail className="h-4 w-4" />
-                                    </button>
-                                  </>
-                                )}
-                                {profile?.role === 'coordenacao' && (
-                                  <button 
-                                    onClick={() => handleDeletePermuta(p.id)} 
-                                    className="p-1.5 text-white bg-red-600 hover:bg-red-700 rounded-full shadow-sm transition-colors"
-                                    title="Excluir Permuta (Admin)"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-
-            {/* Minhas Solicitações */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-              <div className="px-4 py-5 sm:px-6 bg-orange-50 border-b border-orange-100 flex items-center space-x-3">
-                <div className="bg-orange-100 p-2 rounded-full">
-                  <Send className="h-6 w-6 text-samu-orange" />
-                </div>
-                <div>
-                  <h3 className="text-lg leading-6 font-black text-samu-orange uppercase tracking-tight">
-                    Minhas Solicitações
-                  </h3>
-                  <p className="mt-1 max-w-2xl text-xs font-bold text-samu-orange/60 uppercase tracking-tighter">
-                    Permutas que você iniciou.
-                  </p>
-                </div>
-              </div>
-              <ul className="divide-y divide-gray-200">
-                {minhasPermutas.length === 0 ? (
-                  <li className="px-4 py-4 sm:px-6 text-gray-500 text-sm">Nenhuma solicitação feita.</li>
-                ) : (
-                  minhasPermutas.map((p) => (
-                    <li key={p.id} className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <div className="flex items-center space-x-2 mb-1">
-                            {p.unitType && <span className="text-[10px] font-bold text-white bg-gray-500 px-2 py-0.5 rounded-full">{p.unitType}</span>}
-                            <p className="text-sm font-bold text-gray-900">
-                              Substituto: {p.substituteName} ({p.substituteRole})
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-                            <p><span className="font-semibold">Escala Substituto:</span> {p.date} ({p.shift})</p>
-                            <p><span className="font-semibold">Sua Escala:</span> {p.requesterDate} ({p.requesterShift})</p>
-                            {p.reason && (
-                              <p className="sm:col-span-2 mt-1 italic text-gray-500">
-                                <span className="font-semibold not-italic">Motivo:</span> {p.reason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                          <div className="flex items-center space-x-2">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              p.status === 'aprovada' || p.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                              p.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                              p.status === 'pendente_coordenacao' ? 'bg-indigo-100 text-indigo-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {p.status === 'aprovada' || p.status === 'approved' ? 'Aprovada' : 
-                               p.status === 'rejected' ? 'Rejeitada' : 
-                               p.status === 'pendente_coordenacao' ? 'Aguardando Coordenação' :
-                               'Aguardando Substituto'}
-                            </span>
-                            <div className="flex space-x-2 ml-2">
-                              {(p.status === 'aprovada' || p.status === 'approved') && (
-                                <>
-                                  <button onClick={() => generatePDF(p)} className="p-1.5 text-white bg-indigo-500 hover:bg-indigo-600 rounded-full shadow-sm transition-colors" title="Gerar PDF">
-                                    <FileText className="h-4 w-4" />
-                                  </button>
-                                  <button onClick={() => shareWhatsApp(p)} className="p-1.5 text-white bg-green-500 hover:bg-green-600 rounded-full shadow-sm transition-colors" title="Enviar por WhatsApp">
-                                    <MessageCircle className="h-4 w-4" />
-                                  </button>
-                                  <button onClick={() => shareEmail(p)} className="p-1.5 text-white bg-blue-500 hover:bg-blue-600 rounded-full shadow-sm transition-colors" title="Enviar por E-mail">
-                                    <Mail className="h-4 w-4" />
-                                  </button>
-                                </>
-                              )}
-                              {profile?.role === 'coordenacao' && (
-                                <button 
-                                  onClick={() => handleDeletePermuta(p.id)} 
-                                  className="p-1.5 text-white bg-red-600 hover:bg-red-700 rounded-full shadow-sm transition-colors"
-                                  title="Excluir Permuta (Admin)"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-
-            {/* Histórico de Permutas Aprovadas */}
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg border-t-8 border-green-600">
-              <div className="px-4 py-5 sm:px-6 bg-green-50 border-b border-green-100 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-green-600 p-2 rounded-full">
-                    <Check className="h-6 w-6 text-white" />
+              {/* Minhas Solicitações */}
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-white shadow-xl shadow-slate-200/50 overflow-hidden rounded-[2.5rem] border border-slate-100"
+              >
+                <div className="px-8 py-8 bg-slate-50 flex items-center space-x-5">
+                  <div className="bg-samu-orange p-4 rounded-3xl shadow-lg shadow-samu-orange/20">
+                    <Send className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg leading-6 font-black text-green-900 uppercase tracking-tight">
-                      Histórico de Permutas
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                      Minhas Trocas
                     </h3>
-                    <p className="mt-1 max-w-2xl text-xs font-bold text-green-700 uppercase tracking-tighter">
-                      Registro definitivo de permutas validadas.
+                    <p className="mt-0.5 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
+                      Iniciadas por você
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-[10px] font-black text-white bg-green-600 px-3 py-1 rounded-full uppercase tracking-widest">
-                    {permutasAprovadas.length} Aprovadas
-                  </span>
+                <ul className="divide-y divide-slate-50">
+                  {minhasPermutas.length === 0 ? (
+                    <li className="px-8 py-16 text-slate-400 text-sm font-medium italic text-center">Nenhuma solicitação enviada.</li>
+                  ) : (
+                    minhasPermutas.map((p) => (
+                      <li key={p.id} className="px-8 py-8 hover:bg-slate-50/50 transition-all">
+                        <div className="flex flex-col gap-6">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                                  <User className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-slate-900 tracking-tight">{p.substituteName}</p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase">{p.substituteRole}</p>
+                                </div>
+                              </div>
+                              {p.unitType && <span className="text-[9px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 uppercase tracking-widest">{p.unitType}</span>}
+                            </div>
+
+                            <div className="bg-slate-50 rounded-2xl p-4 grid grid-cols-2 gap-4 border border-slate-100">
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Carga Horária</p>
+                                <p className="text-xs font-bold text-slate-900">{p.date}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">{p.shift}</p>
+                              </div>
+                              <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sua Escala</p>
+                                <p className="text-xs font-bold text-slate-900">{p.requesterDate}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">{p.requesterShift}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between w-full">
+                                <span className={twMerge(
+                                  "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border",
+                                  p.status === 'aprovada' || p.status === 'approved' ? 'bg-green-50 text-green-600 border-green-100' : 
+                                  p.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' : 
+                                  p.status === 'pendente_coordenacao' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                  'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-inner'
+                                )}>
+                                  {p.status === 'aprovada' || p.status === 'approved' ? 'Aprovada' : 
+                                   p.status === 'rejected' ? 'Rejeitada' : 
+                                   p.status === 'pendente_coordenacao' ? 'Aguardando Coord' :
+                                   'Aguardando Colega'}
+                                </span>
+                                <div className="flex gap-2">
+                                  {p.status.includes('aprov') && (
+                                    <div className="flex gap-1.5 focus-within:ring-2 focus-within:ring-slate-100 rounded-full p-1">
+                                      <button onClick={() => generatePDF(p)} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all" title="Gerar PDF">
+                                        <FileText className="h-4 w-4" />
+                                      </button>
+                                      <button onClick={() => shareWhatsApp(p)} className="p-2 text-green-500 hover:bg-green-50 rounded-xl transition-all" title="WhatsApp">
+                                        <MessageCircle className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {profile?.role === 'coordenacao' && (
+                                    <button 
+                                      onClick={() => handleDeletePermuta(p.id)} 
+                                      className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-all"
+                                      title="Excluir"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
+                            </div>
+                        </div>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </motion.div>
+            </div>
+
+            {/* Histórico de Permutas Aprovadas */}
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white shadow-2xl shadow-slate-200/50 overflow-hidden rounded-[2.5rem] border border-slate-100"
+            >
+              <div className="px-8 py-10 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="flex items-center space-x-6">
+                  <div className="bg-green-500 p-5 rounded-3xl shadow-xl shadow-green-500/20">
+                    <History className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                      Histórico
+                    </h3>
+                    <p className="mt-1 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                      Permutas validadas oficialmente
+                    </p>
+                  </div>
                 </div>
+                <span className="bg-slate-50 text-slate-500 text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-widest border border-slate-100 shadow-sm">
+                  {permutasAprovadas.length} Registros
+                </span>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data/Unidade</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Substituto</th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-y border-slate-100">
+                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Data / Unidade</th>
+                      <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Equipe Envolvida</th>
+                      <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Documentação</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-slate-50">
                     {permutasAprovadas.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-10 text-center text-sm text-gray-500 italic">Nenhuma permuta aprovada no histórico.</td>
+                        <td colSpan={3} className="px-8 py-20 text-center text-slate-300 text-sm font-medium italic">Nenhum registro encontrado.</td>
                       </tr>
                     ) : (
                       permutasAprovadas.map((p) => (
-                        <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-900">{p.date}</div>
-                            <div className="text-xs text-gray-500">{p.shift} | {p.unitType}</div>
+                        <motion.tr 
+                          whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.5)" }}
+                          key={p.id} 
+                          className="group transition-all"
+                        >
+                          <td className="px-8 py-6 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black text-slate-900 tracking-tight">{p.date}</span>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-[9px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md uppercase border border-indigo-100">{p.unitType}</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase">{p.shift}</span>
+                              </div>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{p.requesterName}</div>
-                            <div className="text-xs text-gray-500">{p.requesterRole}</div>
+                          <td className="px-8 py-6 whitespace-nowrap">
+                            <div className="flex items-center gap-4">
+                              <div className="flex -space-x-3">
+                                <div className="w-9 h-9 rounded-2xl bg-white border-2 border-slate-100 shadow-sm flex items-center justify-center text-samu-blue font-black text-xs ring-4 ring-white" title={p.requesterName}>
+                                  {p.requesterName.charAt(0)}
+                                </div>
+                                <div className="w-9 h-9 rounded-2xl bg-white border-2 border-slate-100 shadow-sm flex items-center justify-center text-samu-orange font-black text-xs ring-4 ring-white" title={p.substituteName}>
+                                  {p.substituteName.charAt(0)}
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-slate-900">{p.requesterName.split(' ')[0]} ↔ {p.substituteName.split(' ')[0]}</span>
+                                <span className="text-[10px] text-slate-400 uppercase font-bold mt-0.5">{p.requesterRole}</span>
+                              </div>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{p.substituteName}</div>
-                            <div className="text-xs text-gray-500">{p.substituteRole}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
+                          <td className="px-8 py-6 whitespace-nowrap text-right">
+                            <div className="flex justify-end gap-2 group-hover:opacity-100 sm:opacity-50 transition-opacity">
                               <button 
                                 onClick={() => generatePDF(p)} 
-                                className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                title="Baixar PDF"
+                                className="p-3 bg-white text-slate-400 hover:text-samu-blue hover:bg-slate-50 rounded-2xl border border-slate-100 shadow-sm transition-all active:scale-95"
+                                title="Baixar Termo"
                               >
-                                <FileText className="h-4 w-4" />
+                                <FileText className="h-5 w-5" />
                               </button>
                               <button 
                                 onClick={() => shareWhatsApp(p)} 
-                                className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                title="Enviar WhatsApp"
+                                className="p-3 bg-white text-slate-400 hover:text-green-500 hover:bg-green-50 rounded-2xl border border-slate-100 shadow-sm transition-all active:scale-95"
+                                title="Compartilhar"
                               >
-                                <MessageCircle className="h-4 w-4" />
-                              </button>
-                              <button 
-                                onClick={() => shareEmail(p)} 
-                                className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                title="Enviar E-mail"
-                              >
-                                <Mail className="h-4 w-4" />
+                                <MessageCircle className="h-5 w-5" />
                               </button>
                               {profile?.role === 'coordenacao' && (
                                 <button 
                                   onClick={() => handleDeletePermuta(p.id)} 
-                                  className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                  title="Excluir Permuta (Admin)"
+                                  className="p-3 bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl border border-slate-100 shadow-sm transition-all active:scale-95"
+                                  title="Remover"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-5 w-5" />
                                 </button>
                               )}
                             </div>
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))
                     )}
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
-      </main>
+      </AnimatePresence>
+    </main>
 
       {/* Digital Signature Confirmation Modal */}
-      {signingPermutaId && (
-        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setSigningPermutaId(null)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
-              <div>
-                <div className="mt-3 text-center sm:mt-5">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                    Assinatura Digital
-                  </h3>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Sua identidade será vinculada através da sua conta Google autenticada.
+      <AnimatePresence>
+        {signingPermutaId && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl max-w-sm w-full overflow-hidden border border-slate-100"
+            >
+              <div className="p-8 text-center bg-gradient-to-b from-slate-50 to-white">
+                <div className="bg-samu-blue/10 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                  <Check className="h-8 w-8 text-samu-blue" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Assinatura Digital</h3>
+                <p className="mt-2 text-slate-500 text-xs font-bold uppercase tracking-widest leading-relaxed">
+                  Validação via Google Auth
+                </p>
+
+                <div className="mt-8 p-6 border-2 border-dashed border-samu-blue/20 rounded-3xl bg-blue-50/50 relative overflow-hidden group">
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] transition-opacity">
+                    <SamuLogo className="w-32 h-32" />
+                  </div>
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="bg-white p-2 rounded-xl shadow-sm mb-4 border border-blue-100">
+                      <SamuLogo className="h-8 w-8 object-contain" />
+                    </div>
+                    <p className="text-[9px] text-samu-blue font-black tracking-[0.2em] uppercase mb-4 opacity-60">Autenticação Segura</p>
+                    <p className="text-lg font-black text-slate-900 leading-tight">{profile?.name.toUpperCase()}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                        {profile?.coren ? `${profile.coren} • ` : ''}CPF {profile?.cpf}
+                      </span>
+                    </div>
+                    <div className="h-px w-12 bg-blue-200 my-4" />
+                    <p className="text-[9px] text-slate-400 font-mono uppercase tracking-tighter">
+                      {new Date().toLocaleDateString()} • {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
 
-                {/* Signature Preview */}
-                <div className="mt-4 p-4 border-2 border-dashed border-samu-blue/30 rounded-lg bg-blue-50 relative overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.05] pointer-events-none">
-                    <SamuLogo className="w-24 h-24" />
-                  </div>
-                  <p className="text-[10px] text-samu-blue font-black mb-2 uppercase tracking-widest relative z-10">Assinatura Digital SAMU 192</p>
-                  <div className="flex items-start space-x-3 relative z-10">
-                    <div className="text-samu-red text-xl">★</div>
-                    <div>
-                      <p className="text-[9px] text-samu-blue font-black tracking-tighter">DOCUMENTO ASSINADO POR GOOGLE AUTH</p>
-                      <p className="text-sm font-black text-gray-900">{profile?.name.toUpperCase()}</p>
-                      <p className="text-[10px] text-gray-600 font-bold uppercase">
-                        {profile?.coren ? `${profile.coren} / ` : ''}CPF {profile?.cpf}
-                      </p>
-                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">EM {new Date().toLocaleDateString()} - ÀS {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    </div>
-                  </div>
+                {signingError && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-4 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                  >
+                    {signingError}
+                  </motion.div>
+                )}
+
+                <div className="mt-8 space-y-3">
+                  <SystemSignatureButton 
+                    onClick={confirmSign as any}
+                    loading={isSigning}
+                    className="w-full py-5 rounded-2xl shadow-xl shadow-samu-blue/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSigningPermutaId(null)}
+                    className="w-full py-4 text-[10px] font-black text-slate-400 hover:text-slate-600 transition-all uppercase tracking-[0.2em]"
+                  >
+                    Desistir e Voltar
+                  </button>
                 </div>
               </div>
-              
-              <div className="mt-6 space-y-4">
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="space-y-3">
-                    {signingError && (
-                      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm font-bold text-center">
-                        {signingError}
-                      </div>
-                    )}
-                    <div className="flex flex-col space-y-2">
-                      <SystemSignatureButton 
-                        onClick={confirmSign as any}
-                        loading={isSigning}
-                        className="w-full py-4 uppercase tracking-widest text-xs bg-samu-blue text-white hover:bg-samu-blue-hover border-none shadow-xl transform active:scale-95"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setSigningPermutaId(null)}
-                        className="w-full py-2 text-xs font-black text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-widest"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Exclusão</h3>
-            <p className="text-sm text-gray-600 mb-6">Tem certeza que deseja excluir esta permuta permanentemente?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmDeletePermuta}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
-              >
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100"
+            >
+              <div className="bg-red-50 w-16 h-16 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                <Trash2 className="h-8 w-8 text-red-500" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Excluir Permuta?</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-8">Esta ação removerá permanentemente o registro do sistema. Esta ação não poderá ser desfeita.</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 px-6 py-4 text-[10px] font-black text-slate-400 border border-slate-200 rounded-2xl hover:bg-slate-50 active:scale-95 transition-all uppercase tracking-widest"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeletePermuta}
+                  className="flex-1 px-6 py-4 text-[10px] font-black text-white bg-red-600 rounded-2xl shadow-lg shadow-red-600/20 hover:bg-red-700 active:scale-95 transition-all uppercase tracking-widest"
+                >
+                   Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1057,6 +1172,8 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
     "Coordenador(a) / Administrativo"
   ];
 
+  const UNIT_TYPES = ["USA", "USB", "MOTOLÂNCIA", "VIR", "CENTRAL"];
+
   useEffect(() => {
     if (profile?.cargo) {
       setRequesterRole(profile.cargo);
@@ -1081,13 +1198,13 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
     const usersList = registeredUsers ? JSON.parse(registeredUsers) : [];
     
     // Filter to show only other registered users (not the current user)
-    // Map properties if needed (samu_registered_users uses 'uid' while this code expect 'id')
     const mappedUsers = usersList.map((u: any) => ({
       id: u.uid || u.id,
       name: u.name,
       cargo: u.cargo || u.role,
       base: u.base || 'Serra Talhada',
-      cpf: u.cpf
+      cpf: u.cpf,
+      coren: u.coren
     }));
 
     setUsers(mappedUsers.filter((u: any) => u.id !== profile?.uid));
@@ -1131,7 +1248,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
       allPermutas.push(newPermuta);
       localStorage.setItem('samu_permutas', JSON.stringify(allPermutas));
 
-      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta solicitada localmente! O substituto deve verificar no mesmo dispositivo." }));
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta solicitada localmente!" }));
       onCancel();
     } catch (error: any) {
       console.error("Erro ao criar permuta:", error);
@@ -1153,11 +1270,11 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
     const tempPermuta = {
       unitType,
       base,
-      requesterId: profile.uid,
-      requesterName: profile.name,
+      requesterId: profile!.uid,
+      requesterName: profile!.name,
       requesterRole,
-      requesterCpf: profile.cpf || '',
-      requesterCoren: profile.coren || '',
+      requesterCpf: profile!.cpf || '',
+      requesterCoren: profile!.coren || '',
       requesterDate,
       requesterShift,
       substituteId: substitute.id,
@@ -1181,178 +1298,237 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   };
 
   return (
-    <div className="bg-white shadow sm:rounded-lg">
-      <div className="px-4 py-5 sm:p-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Solicitar Nova Permuta</h3>
-        <div className="mt-2 max-w-xl text-sm text-gray-500">
-          <p>Preencha os dados abaixo. Seus dados como solicitante já estão preenchidos automaticamente.</p>
-        </div>
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-xs font-black uppercase tracking-widest text-samu-blue mb-1">Tipo de Unidade</label>
-            <select
-              required
-              value={unitType}
-              onChange={(e) => setUnitType(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-xl shadow-sm py-3 px-3 focus:outline-none focus:ring-samu-blue focus:border-samu-blue sm:text-sm font-bold"
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-4xl mx-auto pb-20"
+    >
+      <div className="bg-white shadow-2xl shadow-slate-200/50 rounded-[3rem] overflow-hidden border border-slate-100">
+        <div className="px-10 py-12 bg-slate-50 border-b border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="bg-samu-orange p-5 rounded-3xl shadow-xl shadow-samu-orange/20">
+                <PlusCircle className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Nova Solicitação</h2>
+                <p className="mt-1 text-slate-400 text-xs font-bold uppercase tracking-widest">Preencha os detalhes da troca de plantão</p>
+              </div>
+            </div>
+            <button 
+              onClick={onCancel}
+              className="p-4 hover:bg-slate-200 rounded-2xl text-slate-400 transition-all active:scale-90"
             >
-              <option value="">Selecione...</option>
-              <option value="USA">USA (Unidade de Suporte Avançado)</option>
-              <option value="USB">USB (Unidade de Suporte Básico)</option>
-            </select>
+              <X className="h-6 w-6" />
+            </button>
           </div>
-          <div>
-            <label className="block text-xs font-black uppercase tracking-widest text-samu-blue mb-1">Base</label>
-            <input
-              type="text"
-              required
-              value={base}
-              onChange={(e) => setBase(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-xl shadow-sm py-3 px-3 focus:outline-none focus:ring-samu-blue focus:border-samu-blue sm:text-sm font-bold"
-              placeholder="Ex: Serra Talhada"
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Solicitante</label>
-              <input
-                type="text"
-                disabled
-                value={profile?.name || ''}
-                className="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm py-2 px-3 text-gray-500 sm:text-sm"
-              />
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-10 space-y-12">
+          {/* Seção 1: Localização */}
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">01</span>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Unidade e Base</h3>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Cargo do Solicitante</label>
-              <select
-                required
-                value={requesterRole}
-                onChange={(e) => setRequesterRole(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-              >
-                <option value="">Selecione...</option>
-                {SAMU_ROLES.map(role => (
-                  <option key={role} value={role}>{role}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Data do Plantão (Solicitante)</label>
-              <input
-                type="date"
-                required
-                value={requesterDate}
-                onChange={(e) => setRequesterDate(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Turno (Solicitante)</label>
-              <select
-                required
-                value={requesterShift}
-                onChange={(e) => setRequesterShift(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-              >
-                <option value="">Selecione...</option>
-                <option value="Diurno">Diurno</option>
-                <option value="Noturno">Noturno</option>
-                <option value="Plantão 24h">Plantão 24h</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Unidade</label>
+                <select
+                  required
+                  value={unitType}
+                  onChange={(e) => setUnitType(e.target.value)}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                >
+                  <option value="">Selecione...</option>
+                  {UNIT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Base / Localidade</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Serra Talhada"
+                  value={base}
+                  onChange={(e) => setBase(e.target.value)}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-y-4 gap-x-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Substituto</label>
-              <select
-                required
-                value={substituteId}
-                onChange={(e) => setSubstituteId(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-              >
-                <option value="">Selecione um colega...</option>
-                {users.map(u => (
-                  <option key={u.id} value={u.id}>{u.name} ({u.cargo || 'Cargo não informado'})</option>
-                ))}
-              </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {/* Seção 2: Solicitante */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="w-8 h-8 rounded-full bg-samu-blue text-white flex items-center justify-center text-[10px] font-black">02</span>
+                <h3 className="text-sm font-black text-samu-blue uppercase tracking-widest">Dados do Solicitante (Você)</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Nome Completo</p>
+                  <p className="text-sm font-black text-slate-900">{profile?.name.toUpperCase()}</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sua Função</label>
+                  <select
+                    required
+                    value={requesterRole}
+                    onChange={(e) => setRequesterRole(e.target.value)}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-slate-700"
+                  >
+                    <option value="">Selecione sua função...</option>
+                    {SAMU_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sua Data</label>
+                    <input
+                      type="date"
+                      required
+                      value={requesterDate}
+                      onChange={(e) => setRequesterDate(e.target.value)}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-slate-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Seu Turno</label>
+                    <select
+                      required
+                      value={requesterShift}
+                      onChange={(e) => setRequesterShift(e.target.value)}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-slate-700"
+                    >
+                      <option value="">Turno...</option>
+                      <option value="Diurno">Diurno</option>
+                      <option value="Noturo">Noturno</option>
+                      <option value="Plantão 24h">Plantão 24h</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Cargo do Substituto</label>
-              <select
-                required
-                value={substituteRole}
-                onChange={(e) => setSubstituteRole(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-              >
-                <option value="">Selecione...</option>
-                {SAMU_ROLES.map(role => (
-                  <option key={role} value={role}>{role}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Data do Plantão (Substituto)</label>
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Turno (Substituto)</label>
-              <select
-                required
-                value={shift}
-                onChange={(e) => setShift(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-              >
-                <option value="">Selecione...</option>
-                <option value="Diurno">Diurno</option>
-                <option value="Noturno">Noturno</option>
-                <option value="Plantão 24h">Plantão 24h</option>
-              </select>
+
+            {/* Seção 3: Substituto */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="w-8 h-8 rounded-full bg-samu-orange text-white flex items-center justify-center text-[10px] font-black">03</span>
+                <h3 className="text-sm font-black text-samu-orange uppercase tracking-widest">Dados do Substituto</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Colega Substituto</label>
+                  <select
+                    required
+                    value={substituteId}
+                    onChange={(e) => setSubstituteId(e.target.value)}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                  >
+                    <option value="">Selecione o colega...</option>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Função do Substituto</label>
+                  <select
+                    required
+                    value={substituteRole}
+                    onChange={(e) => setSubstituteRole(e.target.value)}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                  >
+                    <option value="">Selecione a função dele...</option>
+                    {SAMU_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data do Colega</label>
+                    <input
+                      type="date"
+                      required
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Turno do Colega</label>
+                    <select
+                      required
+                      value={shift}
+                      onChange={(e) => setShift(e.target.value)}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                    >
+                      <option value="">Turno...</option>
+                      <option value="Diurno">Diurno</option>
+                      <option value="Noturno">Noturno</option>
+                      <option value="Plantão 24h">Plantão 24h</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Motivo</label>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">04</span>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Justificativa</h3>
+            </div>
             <textarea
-              rows={3}
               required
+              rows={3}
+              placeholder="Descreva o motivo da solicitação de permuta..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+              className="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-[2rem] focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300 resize-none"
             />
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+          <div className="pt-8 flex flex-col sm:flex-row gap-4">
             <button
-              type="button"
-              onClick={onCancel}
-              className="w-full sm:w-auto bg-gray-100 py-3 px-6 border border-gray-200 rounded-xl shadow-sm text-xs font-black uppercase tracking-widest text-gray-500 hover:bg-gray-200 focus:outline-none transition-all"
+              type="submit"
+              disabled={loading}
+              className="flex-[2] py-5 px-10 bg-samu-blue text-white rounded-[1.5rem] shadow-2xl shadow-samu-blue/20 hover:bg-samu-blue-hover active:scale-95 transition-all text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center"
             >
-              Cancelar
+              {loading ? (
+                <div className="h-5 w-5 border-3 border-white border-t-transparent animate-spin rounded-full" />
+              ) : (
+                <>
+                  <Check className="w-5 h-5 mr-3" />
+                  Enviar Solicitação
+                </>
+              )}
             </button>
             <button
               type="button"
               onClick={handleSavePDF}
-              className="w-full sm:w-auto bg-white py-3 px-6 border border-samu-orange rounded-xl shadow-sm text-xs font-black uppercase tracking-widest text-samu-orange hover:bg-orange-50 focus:outline-none flex items-center justify-center transition-all"
+              className="flex-1 py-5 px-10 bg-white text-samu-orange border border-samu-orange/20 rounded-[1.5rem] hover:bg-orange-50 active:scale-95 transition-all text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center"
             >
-              <FileText className="w-4 h-4 mr-2" />
-              PDF Rascunho
+              <FileText className="w-5 h-5 mr-3" />
+              Salvar PDF
             </button>
-            <SystemSignatureButton 
-              type="submit"
-              loading={loading}
-              className="w-full sm:w-auto bg-samu-blue text-white hover:bg-samu-blue-hover border-none py-3 uppercase tracking-widest text-[10px] shadow-xl"
-              label={loading ? 'Enviando...' : 'Assinar e Solicitar'}
-            />
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 py-5 px-10 bg-white text-slate-400 border border-slate-200 rounded-[1.5rem] hover:bg-slate-50 active:scale-95 transition-all text-[11px] font-black uppercase tracking-[0.2em]"
+            >
+              Cancelar
+            </button>
           </div>
         </form>
       </div>
-    </div>
+
+      <div className="mt-8 text-center p-8 bg-samu-blue/5 rounded-[2rem] border border-samu-blue/10">
+        <p className="text-[10px] text-samu-blue/60 font-black uppercase tracking-[0.3em]">Importante</p>
+        <p className="mt-2 text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
+          Ao enviar esta solicitação, uma notificação será registrada no sistema. A troca só terá validade oficial após a assinatura de ambas as partes e homologação da coordenação.
+        </p>
+      </div>
+    </motion.div>
   );
 };
+
+export default Dashboard;
