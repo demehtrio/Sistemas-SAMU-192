@@ -1,7 +1,7 @@
 {
-  "name": "SAMU 192 - Gestão de Permutas",
-  "short_name": "SAMU 192",
-  "description": "Sistema de Gestão de Permutas e Checklists - SAMU 192",
+  "name": "Sistemas SAMU 192",
+  "short_name": "Sistemas SAMU",
+  "description": "Portfólio de Sistemas SAMU 192 - Serra Talhada/PE",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
