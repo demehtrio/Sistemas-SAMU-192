@@ -383,15 +383,28 @@ export const VehicleChecklistDashboard: React.FC = () => {
         doc.setTextColor(0, 0, 0);
 
         section.items.forEach(item => {
-          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          if (yPos > 280) { doc.addPage(); yPos = 20; }
           const value = currentData.checks[item.id];
           let statusText = '';
+          let color: [number, number, number] = [0, 0, 0];
+          
           if (typeof value === 'boolean') {
-            statusText = value ? '[X]' : '[ ]';
+            statusText = value ? '[X] OK' : '[ ] NÃO CONFERIDO';
+            if (!value) color = [200, 0, 0];
           } else {
-            statusText = value ? `[${value}]` : '[ ]';
+            const warnValues = [
+              'Baixo', 'Necessita troca', 'Vazamento Detectado', 
+              'Com defeito', 'Com luzes de advertência', 'Não limpa', 'Não lavada',
+              'Baixo/Careca (Requer troca imediata!)', '1/2', '1/4', '0/4'
+            ];
+            statusText = value ? `[ ${value} ]` : '[ NÃO INFORMADO ]';
+            if (!value || warnValues.includes(value)) color = [200, 0, 0];
           }
-          doc.text(`${statusText} ${item.label}`, 25, yPos);
+          
+          doc.setTextColor(...color);
+          doc.text(statusText, 25, yPos);
+          doc.setTextColor(0, 0, 0);
+          doc.text(item.label, 80, yPos);
           yPos += 6;
         });
         yPos += 4;
@@ -429,10 +442,10 @@ export const VehicleChecklistDashboard: React.FC = () => {
       observacoes: formData.observacoes
     };
 
-    let missing = '';
-    const itemsWithIssues: string[] = [];
+    const sectionsWithIssues: string[] = [];
 
     vehicleChecklistStructure.forEach(s => {
+      const issuesInSection: string[] = [];
       s.items.forEach(i => {
         const val = currentData.checks[i.id];
         
@@ -450,9 +463,13 @@ export const VehicleChecklistDashboard: React.FC = () => {
         }
 
         if (isIssue) {
-          itemsWithIssues.push(`• ${i.label}: ${val === false ? '❌ NÃO CONFERIDO' : `⚠️ ${val || 'PENDENTE'}`}`);
+          issuesInSection.push(`  - ${i.label}: ${val === false ? '❌ NO' : `⚠️ ${val || 'PENDENTE'}`}`);
         }
       });
+
+      if (issuesInSection.length > 0) {
+        sectionsWithIssues.push(`*${s.title}*\n${issuesInSection.join('\n')}`);
+      }
     });
 
     const text = `*CHECKLIST VIATURA SAMU 192*\n` +
@@ -460,8 +477,8 @@ export const VehicleChecklistDashboard: React.FC = () => {
       `*Condutor:* ${currentData.condutor}\n` +
       `*Turno:* ${currentData.turno} (${format(new Date(currentData.date), 'dd/MM/yyyy')})\n` +
       `*KM:* ${currentData.kmInicial} -> ${currentData.kmFinal}\n` +
-      `*Situação:* ${itemsWithIssues.length > 0 ? '⚠️ PENDÊNCIAS' : '✅ TUDO OK'}\n` +
-      (itemsWithIssues.length > 0 ? `\n*OBSERVAÇÕES TÉCNICAS:*\n${itemsWithIssues.join('\n')}` : '') +
+      `*Situação:* ${sectionsWithIssues.length > 0 ? '⚠️ PENDÊNCIAS' : '✅ TUDO OK'}\n` +
+      (sectionsWithIssues.length > 0 ? `\n*RELATÓRIO DE NÃO CONFORMIDADES:*\n${sectionsWithIssues.join('\n\n')}` : '') +
       (currentData.observacoes ? `\n\n*Relato Adicional:* ${currentData.observacoes}` : '');
 
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
