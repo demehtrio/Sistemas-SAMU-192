@@ -137,11 +137,25 @@ export const ChecklistDashboard: React.FC = () => {
   // Load Templates (LocalStorage)
   useEffect(() => {
     const loadTemplates = () => {
-      const savedUSA = localStorage.getItem('checklist_templates_USA');
-      if (savedUSA) setDynamicChecklistUSA(JSON.parse(savedUSA).categories);
-      
-      const savedUSB = localStorage.getItem('checklist_templates_USB');
-      if (savedUSB) setDynamicChecklistUSB(JSON.parse(savedUSB).categories);
+      try {
+        const savedUSA = localStorage.getItem('checklist_templates_USA');
+        if (savedUSA) {
+          const parsed = JSON.parse(savedUSA);
+          if (parsed && parsed.categories) {
+            setDynamicChecklistUSA(parsed.categories);
+          }
+        }
+        
+        const savedUSB = localStorage.getItem('checklist_templates_USB');
+        if (savedUSB) {
+          const parsed = JSON.parse(savedUSB);
+          if (parsed && parsed.categories) {
+            setDynamicChecklistUSB(parsed.categories);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading templates:", err);
+      }
     };
     
     loadTemplates();
@@ -151,11 +165,26 @@ export const ChecklistDashboard: React.FC = () => {
   useEffect(() => {
     if (!showHistory) return;
     
-    const savedHistory = localStorage.getItem('samu_checklists_history');
-    if (savedHistory) {
-      const parsed = JSON.parse(savedHistory);
-      setHistory(parsed.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 50));
-    }
+    const loadHistory = () => {
+      try {
+        const savedHistory = localStorage.getItem('samu_checklists_history');
+        if (savedHistory) {
+          const parsed = JSON.parse(savedHistory);
+          if (Array.isArray(parsed)) {
+            const sortedHistory = parsed.sort((a: any, b: any) => {
+              const dateA = a.date ? new Date(a.date).getTime() : 0;
+              const dateB = b.date ? new Date(b.date).getTime() : 0;
+              return dateB - dateA;
+            }).slice(0, 50);
+            setHistory(sortedHistory);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading history:", err);
+      }
+    };
+    
+    loadHistory();
   }, [showHistory]);
 
   if (authLoading) {

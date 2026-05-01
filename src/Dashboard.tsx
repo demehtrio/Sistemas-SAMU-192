@@ -214,8 +214,9 @@ export const generatePDF = async (permuta: any) => {
       try {
         // Use a simpler approach for watermark if GState is not available or causing issues
         doc.saveGraphicsState();
-        const gState = (doc as any).GState ? new (doc as any).GState({opacity: 0.15}) : null;
-        if (gState) {
+        const GState = (doc as any).GState;
+        if (GState) {
+          const gState = new GState({opacity: 0.15});
           doc.setGState(gState);
         }
         doc.addImage(samuLogoBase64, 'PNG', x + 20, y - 5, 25, 25);
@@ -230,7 +231,10 @@ export const generatePDF = async (permuta: any) => {
     } else {
       // Fallback watermark using jsPDF primitives if image failed to load
       try {
-        doc.setGState(new (doc as any).GState({opacity: 0.1}));
+        const GState = (doc as any).GState;
+        if (GState) {
+          doc.setGState(new GState({opacity: 0.1}));
+        }
         doc.setDrawColor(200, 16, 46);
         doc.setFillColor(200, 16, 46);
         doc.circle(x + 32, y + 7, 12, 'F');
@@ -238,7 +242,6 @@ export const generatePDF = async (permuta: any) => {
         doc.setLineWidth(1.5);
         doc.line(x + 32, y + 1, x + 32, y + 13);
         doc.line(x + 26, y + 7, x + 38, y + 7);
-        doc.setGState(new (doc as any).GState({opacity: 1.0}));
       } catch (e) {}
     }
 
@@ -308,7 +311,8 @@ export const generatePDF = async (permuta: any) => {
   doc.save(`Permuta_${permuta.date}_${permuta.requesterName.replace(/\s+/g, '')}.pdf`);
 };
 
-export const Dashboard: React.FC = () => {
+const Dashboard: React.FC = () => {
+  console.log("Dashboard rendering...");
   const { user, profile, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [minhasPermutas, setMinhasPermutas] = useState<any[]>([]);
@@ -341,23 +345,51 @@ export const Dashboard: React.FC = () => {
     if (!profile) return;
 
     const loadData = () => {
-      const savedPermutas = localStorage.getItem('samu_permutas');
-      const allPermutas = savedPermutas ? JSON.parse(savedPermutas) : [];
-      
-      // Filter for me
-      setMinhasPermutas(allPermutas.filter((p: any) => p.requesterId === profile.uid && p.status !== 'aprovada'));
-      setPermutasRecebidas(allPermutas.filter((p: any) => p.substituteId === profile.uid && p.status !== 'aprovada'));
-      
-      if (profile.role === 'coordenacao') {
-        setPermutasCoordenacao(allPermutas.filter((p: any) => p.status === 'pendente_coordenacao'));
-      }
+      try {
+        const savedPermutas = localStorage.getItem('samu_permutas');
+        if (!savedPermutas) {
+          setMinhasPermutas([]);
+          setPermutasRecebidas([]);
+          setPermutasCoordenacao([]);
+          setPermutasAprovadas([]);
+          return;
+        }
 
-      const history = allPermutas.filter((p: any) => 
-        p.status === 'aprovada' && 
-        (profile.role === 'coordenacao' || p.requesterId === profile.uid || p.substituteId === profile.uid)
-      ).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
-      setPermutasAprovadas(history);
+        const allPermutas = JSON.parse(savedPermutas);
+        if (!Array.isArray(allPermutas)) {
+          setMinhasPermutas([]);
+          setPermutasRecebidas([]);
+          setPermutasCoordenacao([]);
+          setPermutasAprovadas([]);
+          return;
+        }
+        
+        // Filter for me
+        setMinhasPermutas(allPermutas.filter((p: any) => p.requesterId === profile.uid && p.status !== 'aprovada'));
+        
+        // Received but not yet acted upon by substitute
+        setPermutasRecebidas(allPermutas.filter((p: any) => 
+          p.substituteId === profile.uid && 
+          p.status === 'pendente_substituto'
+        ));
+        
+        if (profile.role === 'coordenacao') {
+          setPermutasCoordenacao(allPermutas.filter((p: any) => p.status === 'pendente_coordenacao'));
+        }
+
+        const history = allPermutas.filter((p: any) => 
+          (p.status === 'aprovada' || p.status === 'approved') && 
+          (profile.role === 'coordenacao' || p.requesterId === profile.uid || p.substituteId === profile.uid)
+        ).sort((a: any, b: any) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+        
+        setPermutasAprovadas(history);
+      } catch (err) {
+        console.error("Error loading permutas:", err);
+      }
     };
 
     loadData();

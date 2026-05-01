@@ -3,7 +3,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './AuthContext';
 import { Login } from './Login';
 import { Register } from './Register';
-import { Dashboard, ErrorBoundary } from './Dashboard';
+import Dashboard, { ErrorBoundary } from './Dashboard';
 import { ChecklistDashboard } from './ChecklistDashboard';
 import { Home } from './Home';
 import { SamuLogo } from './components/SamuLogo';
