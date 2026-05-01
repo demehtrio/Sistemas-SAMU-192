@@ -32,7 +32,7 @@ service cloud.firestore {
       }
 
       allow get: if isSignedIn();
-      allow list: if isAdmin();
+      allow list: if isSignedIn();
       
       allow create: if isOwner(userId) && isValidUser(incoming()) && (
         incoming().role != 'coordenacao' || 
@@ -58,9 +58,9 @@ service cloud.firestore {
                (!data.keys().contains('reason') || data.reason.size() <= 1000);
       }
 
-      allow read: if isSignedIn() && (isOwner(existing().requesterId) || isOwner(existing().substituteId) || isAdmin());
-      allow list: if isSignedIn() && (resource.data.requesterId == request.auth.uid || resource.data.substituteId == request.auth.uid || isAdmin());
-
+      allow read: if isSignedIn();
+      allow list: if isSignedIn();
+      
       allow create: if isVerified() && isOwner(incoming().requesterId) && isValidPermuta(incoming()) &&
                     exists(/databases/$(database)/documents/users/$(incoming().substituteId));
 
@@ -90,8 +90,8 @@ service cloud.firestore {
                data.userId == request.auth.uid;
       }
 
-      allow read: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn();
+      allow list: if isSignedIn();
       
       allow create: if isVerified() && isValidChecklist(incoming());
       allow delete: if isOwner(existing().userId) || isAdmin();
@@ -104,8 +104,8 @@ service cloud.firestore {
                data.userId == request.auth.uid;
       }
 
-      allow read: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn();
+      allow list: if isSignedIn();
       
       allow create: if isVerified() && isValidVehicleChecklist(incoming());
       allow delete: if isAdmin();

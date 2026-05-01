@@ -180,8 +180,7 @@ const vehicleChecklistStructure = [
       },
       { id: 'calibragem_pneus', label: 'Calibragem (Verificada e ajustada)', type: 'boolean' },
       { id: 'estepe_estado', label: 'Estepe (Presente, calibrado e em uso)', type: 'boolean' },
-      { id: 'avarias_pneus', label: 'Ausência de Bolhas/Cortes', type: 'boolean' },
-      { id: 'extintor_incendio', label: 'Extintor (Zona verde e validade)', type: 'boolean' }
+      { id: 'avarias_pneus', label: 'Ausência de Bolhas/Cortes', type: 'boolean' }
     ]
   },
   {
@@ -191,6 +190,25 @@ const vehicleChecklistStructure = [
     items: [
       { id: 'documento_veiculo', label: 'Documento do Veículo (CRLV)', type: 'boolean' },
       { id: 'cartao_abastecimento', label: 'Cartão de Abastecimento', type: 'boolean' }
+    ]
+  },
+  {
+    id: 'equipamentos',
+    title: '6. Equipamentos',
+    icon: Briefcase,
+    items: [
+      { id: 'oxigenio_1', label: 'Oxigênio 1', type: 'boolean' },
+      { id: 'oxigenio_2', label: 'Oxigênio 2', type: 'boolean' },
+      { id: 'oxigenio_portatil', label: 'Oxigênio Portátil', type: 'boolean' },
+      { id: 'ar_comprimido', label: 'Ar Comprimido', type: 'boolean' },
+      { id: 'cadeira_rodas', label: 'Cadeira de Rodas', type: 'boolean' },
+      { id: 'prancha_1', label: 'Prancha 1', type: 'boolean' },
+      { id: 'prancha_2', label: 'Prancha 2', type: 'boolean' },
+      { id: 'maca', label: 'Maca', type: 'boolean' },
+      { id: 'cones', label: 'Cones', type: 'boolean' },
+      { id: 'chave_roda', label: 'Chave de Roda', type: 'boolean' },
+      { id: 'extintor_cabine', label: 'Extintor Cabine', type: 'boolean' },
+      { id: 'extintor_salao', label: 'Extintor de Salão', type: 'boolean' }
     ]
   }
 ];
@@ -412,11 +430,27 @@ export const VehicleChecklistDashboard: React.FC = () => {
     };
 
     let missing = '';
+    const itemsWithIssues: string[] = [];
+
     vehicleChecklistStructure.forEach(s => {
       s.items.forEach(i => {
         const val = currentData.checks[i.id];
-        if (!val || val === 'Baixo' || val === 'Necessita troca' || val === 'Vazamento Detectado') {
-          missing += `• ${i.label}: ${val || 'NÃO CONFERIDO'}\n`;
+        
+        let isIssue = false;
+        if (typeof val === 'boolean') {
+          if (!val) isIssue = true;
+        } else {
+          // If select and not normal/working/good
+          const warnValues = [
+            'Baixo', 'Necessita troca', 'Vazamento Detectado', 
+            'Com defeito', 'Com luzes de advertência', 'Não limpa', 'Não lavada',
+            'Baixo/Careca (Requer troca imediata!)', '1/2', '1/4', '0/4'
+          ];
+          if (!val || warnValues.includes(val)) isIssue = true;
+        }
+
+        if (isIssue) {
+          itemsWithIssues.push(`• ${i.label}: ${val === false ? '❌ NÃO CONFERIDO' : `⚠️ ${val || 'PENDENTE'}`}`);
         }
       });
     });
@@ -426,9 +460,9 @@ export const VehicleChecklistDashboard: React.FC = () => {
       `*Condutor:* ${currentData.condutor}\n` +
       `*Turno:* ${currentData.turno} (${format(new Date(currentData.date), 'dd/MM/yyyy')})\n` +
       `*KM:* ${currentData.kmInicial} -> ${currentData.kmFinal}\n` +
-      `*Situação:* ${missing ? '⚠️ PENDÊNCIAS' : '✅ TUDO OK'}\n` +
-      (missing ? `\n*ITENS NÃO CONCORDES:*\n${missing}` : '') +
-      (currentData.observacoes ? `\n*Observações:* ${currentData.observacoes}` : '');
+      `*Situação:* ${itemsWithIssues.length > 0 ? '⚠️ PENDÊNCIAS' : '✅ TUDO OK'}\n` +
+      (itemsWithIssues.length > 0 ? `\n*OBSERVAÇÕES TÉCNICAS:*\n${itemsWithIssues.join('\n')}` : '') +
+      (currentData.observacoes ? `\n\n*Relato Adicional:* ${currentData.observacoes}` : '');
 
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
