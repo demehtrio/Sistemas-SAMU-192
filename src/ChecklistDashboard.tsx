@@ -177,11 +177,12 @@ export const ChecklistDashboard: React.FC = () => {
   useEffect(() => {
     if (!showHistory || !profile) return;
     
-    const q = query(
-      collection(db, 'checklists'), 
-      where('userId', '==', profile.uid),
-      orderBy('date', 'desc')
-    );
+    const checklistsRef = collection(db, 'checklists');
+    const isCoord = profile.role === 'coordenacao';
+    
+    const q = isCoord
+      ? query(checklistsRef, orderBy('date', 'desc'))
+      : query(checklistsRef, where('userId', '==', profile.uid), orderBy('date', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const historyList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as HistoryEntry[];
@@ -270,6 +271,17 @@ export const ChecklistDashboard: React.FC = () => {
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'checklists');
       showToastMessage('Erro ao salvar checklist.', 'error');
+    }
+  };
+
+  const handleDeleteChecklist = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este checklist permanentemente?')) return;
+    try {
+      await deleteDoc(doc(db, 'checklists', id));
+      showToastMessage('Checklist excluído com sucesso!');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `checklists/${id}`);
+      showToastMessage('Erro ao excluir checklist.', 'error');
     }
   };
 
@@ -826,7 +838,9 @@ export const ChecklistDashboard: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between bg-gray-50">
-              <h2 className="text-lg font-black uppercase text-gray-800">Meu Histórico</h2>
+              <h2 className="text-lg font-black uppercase text-gray-800">
+                {profile?.role === 'coordenacao' ? 'Histórico de Checklists' : 'Meu Histórico'}
+              </h2>
               <button onClick={() => setShowHistory(false)}><X /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -834,14 +848,28 @@ export const ChecklistDashboard: React.FC = () => {
                 <div key={entry.id} className="p-4 border rounded-xl bg-white shadow-sm flex items-center justify-between">
                   <div>
                     <p className="text-xs font-black text-samu-blue uppercase">{entry.type} - {entry.turno}</p>
+                    {profile?.role === 'coordenacao' && (
+                      <p className="text-[10px] text-samu-red font-black uppercase mb-1">{entry.enfermeiro || 'Nome não registrado'}</p>
+                    )}
                     <p className="text-[10px] text-gray-400 font-bold">{new Date(entry.date).toLocaleString('pt-BR')}</p>
                   </div>
-                  <button 
-                    onClick={() => setViewingEntry(entry)}
-                    className="p-2 text-gray-400 hover:text-samu-blue transition-colors"
-                  >
-                    <Eye size={20} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {profile?.role === 'coordenacao' && (
+                      <button 
+                        onClick={() => handleDeleteChecklist(entry.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Excluir"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setViewingEntry(entry)}
+                      className="p-2 text-gray-400 hover:text-samu-blue transition-colors"
+                    >
+                      <Eye size={20} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -867,7 +895,11 @@ export const ChecklistDashboard: React.FC = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gray-50 p-4 rounded-2xl md:col-span-1">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Profissional</p>
+                  <p className="font-bold text-samu-blue uppercase">{viewingEntry.enfermeiro}</p>
+                </div>
                 <div className="bg-gray-50 p-4 rounded-2xl">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Viatura</p>
                   <p className="font-bold text-samu-blue">{viewingEntry.type}</p>
