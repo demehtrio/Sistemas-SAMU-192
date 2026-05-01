@@ -33,6 +33,13 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     window.dispatchEvent(new CustomEvent('firestore-quota-exceeded'));
   }
 
+  // Dispatch event to show error toast in the UI
+  window.dispatchEvent(new CustomEvent('show-error-toast', { 
+    detail: errorMessage.includes('insufficient permissions') 
+      ? 'Você não tem permissão para realizar esta ação.' 
+      : `Erro no sistema: ${errorMessage}`
+  }));
+
   const errInfo: FirestoreErrorInfo = {
     error: errorMessage,
     authInfo: {

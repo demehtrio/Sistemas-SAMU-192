@@ -698,6 +698,15 @@ const Dashboard: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex items-center space-x-3">
+                            {profile?.role === 'coordenacao' && (
+                              <button 
+                                onClick={() => handleDeletePermuta(p.id)} 
+                                className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                title="Excluir Permanentemente"
+                              >
+                                <Trash2 className="h-5 w-5" />
+                              </button>
+                            )}
                             <button
                               onClick={() => initiateSign(p.id, 'approved')}
                               className="flex-1 sm:flex-none inline-flex items-center justify-center px-6 py-3 rounded-xl shadow-lg shadow-green-600/10 text-[10px] font-black uppercase tracking-widest text-white bg-green-600 hover:bg-green-700 transition-all active:scale-95"
