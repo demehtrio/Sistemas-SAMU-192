@@ -55,6 +55,16 @@
         "outros": { "type": "object" },
         "status": { "type": "string" }
       }
+    },
+    "Config": {
+      "title": "Config",
+      "description": "Global settings",
+      "type": "object",
+      "properties": {
+        "escalaLink": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -69,6 +79,10 @@
     "/checklists/{checklistId}": {
       "schema": "Checklist",
       "description": "Vehicle checklists"
+    },
+    "/settings/{settingId}": {
+      "schema": "Config",
+      "description": "System settings"
     }
   }
 }
