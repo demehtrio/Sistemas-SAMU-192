@@ -510,7 +510,7 @@ export const ChecklistDashboard: React.FC = () => {
             </div>
             <div>
               <h1 className="text-lg font-black uppercase tracking-tight">Checklist de Viaturas</h1>
-              <p className="text-[10px] text-samu-orange font-bold uppercase tracking-widest">SAMU 192 - Serra Talhada</p>
+              <p className="text-[10px] text-samu-orange font-bold uppercase tracking-widest">Sistemas SAMU 192 - Serra Talhada</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">

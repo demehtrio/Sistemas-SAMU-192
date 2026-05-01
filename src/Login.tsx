@@ -39,7 +39,7 @@ export const Login: React.FC = () => {
           <div className="bg-white p-2 rounded-full shadow-md mb-4">
             <SamuLogo className="h-32 w-32 object-contain" />
           </div>
-          <h1 className="text-3xl font-black text-samu-blue">SAMU 192</h1>
+          <h1 className="text-3xl font-black text-samu-blue">Sistemas SAMU 192</h1>
           <h2 className="text-sm font-bold text-samu-orange tracking-widest uppercase">Base Serra Talhada</h2>
         </div>
         <h3 className="mt-6 text-center text-2xl font-extrabold text-gray-900">

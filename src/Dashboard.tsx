@@ -552,7 +552,7 @@ const Dashboard: React.FC = () => {
                 <SamuLogo className="h-10 w-10 object-contain" />
               </div>
               <div className="flex flex-col justify-center">
-                <h1 className="text-xl font-black text-samu-blue tracking-tight leading-none">SAMU 192</h1>
+                <h1 className="text-xl font-black text-samu-blue tracking-tight leading-none">Sistemas SAMU 192</h1>
                 <span className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase mt-1">Serra Talhada / PE</span>
               </div>
             </div>
