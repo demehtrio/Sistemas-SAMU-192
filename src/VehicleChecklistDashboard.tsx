@@ -72,21 +72,58 @@ const vehicleChecklistStructure = [
     title: '1. Motor e Fluidos',
     icon: Droplet,
     items: [
-      { id: 'oleo_motor', label: 'Nível de Óleo do Motor (Dentro da marca)' },
-      { id: 'liquido_arrefecimento', label: 'Líquido de Arrefecimento (Nível reservatórrio)' },
-      { id: 'fluido_freio_direcao', label: 'Fluido de Freio e Direção (Nível/Vazamentos)' },
-      { id: 'combustivel', label: 'Combustível (Tanque acima de 3/4)' }
+      { 
+        id: 'oleo_motor', 
+        label: 'Nível de Óleo do Motor', 
+        type: 'select', 
+        options: ['Normal', 'Baixo', 'Necessita troca'] 
+      },
+      { 
+        id: 'liquido_arrefecimento', 
+        label: 'Líquido de Arrefecimento', 
+        type: 'select', 
+        options: ['Normal', 'Baixo'] 
+      },
+      { 
+        id: 'fluido_freio_direcao', 
+        label: 'Fluido de Freio e Direção', 
+        type: 'select', 
+        options: ['Normal', 'Baixo', 'Vazamento Detectado'] 
+      },
+      { 
+        id: 'combustivel', 
+        label: 'Combustível', 
+        type: 'select', 
+        options: ['4/4', '3/4', '1/2', '1/4', '0/4'] 
+      }
     ]
   },
   {
     id: 'eletrico',
-    title: '2. Sistema Elétrico, Iluminação e Som',
+    title: '2. Sistema Elétrico, Iluminação e Comunicação',
     icon: Zap,
     items: [
-      { id: 'sinalizacao_visual', label: 'Sinalização Visual (Giroflex, strobo, perimetrais)' },
-      { id: 'sinalizacao_acustica', label: 'Sinalização Acústica (Sirene, buzina)' },
-      { id: 'iluminacao_padrao', label: 'Iluminação Padrão (Faróis, setas, freio, ré)' },
-      { id: 'radio_transmissor', label: 'Rádio Transmissor (Comunicação Central)' }
+      // 2.1 Sinalização de Emergência e Comunicação
+      { id: 'giroflex', label: 'Giroflex / Barra de Luzes (LEDs)', type: 'boolean' },
+      { id: 'strobos', label: 'Strobos / Flashers (Grade/Traseira)', type: 'boolean' },
+      { id: 'sirene', label: 'Sirene (Tons e Megafone/PTT)', type: 'boolean' },
+      { id: 'luzes_perimetrais', label: 'Luzes Perimetrais (Laterais/Traseira)', type: 'boolean' },
+      { id: 'radio_fixo', label: 'Rádio Transmissor Fixo (Central)', type: 'boolean' },
+      { id: 'radio_ht', label: 'Rádio Portátil HT (Bateria/Sinal)', type: 'boolean' },
+      
+      // 2.2 Iluminação Padrão
+      { id: 'farois', label: 'Faróis (Foco Baixo e Alto)', type: 'boolean' },
+      { id: 'luzes_posicao', label: 'Lanternas (Posição)', type: 'boolean' },
+      { id: 'setas', label: 'Sinalização de Direção (Setas)', type: 'boolean' },
+      { id: 'luz_freio', label: 'Luz de Freio (incluindo Break-light)', type: 'boolean' },
+      { id: 'luz_re', label: 'Luz de Ré (Luz e Alerta Sonoro)', type: 'boolean' },
+      { id: 'luz_placa', label: 'Luz de Placa', type: 'boolean' },
+
+      // 2.3 Cabine e Salão
+      { id: 'luzes_cabine', label: 'Luzes Internas da Cabine', type: 'boolean' },
+      { id: 'iluminacao_salao', label: 'Iluminação Salão (Branca/Azul)', type: 'boolean' },
+      { id: 'inversor_tomadas', label: 'Inversor / Tomadas 110v/220v', type: 'boolean' },
+      { id: 'bateria_auxiliar', label: 'Bateria Auxiliar (Carga)', type: 'boolean' }
     ]
   },
   {
@@ -94,19 +131,57 @@ const vehicleChecklistStructure = [
     title: '3. Cabine e Conforto',
     icon: Wind,
     items: [
-      { id: 'ar_condicionado', label: 'Ar-condicionado (Cabine e Salão)' },
-      { id: 'painel_instrumentos', label: 'Painel (Sem luzes de advertência - Injeção, ABS, Airbag)' },
-      { id: 'higienizacao', label: 'Higienização (Cabine limpa)' }
+      { 
+        id: 'ar_cabine', 
+        label: 'Ar-condicionado Cabine', 
+        type: 'select', 
+        options: ['Funcionando', 'Com defeito'] 
+      },
+      { 
+        id: 'ar_salao', 
+        label: 'Ar-condicionado Salão', 
+        type: 'select', 
+        options: ['Funcionando', 'Com defeito'] 
+      },
+      { 
+        id: 'painel_instrumentos', 
+        label: 'Painel de Instrumentos', 
+        type: 'select', 
+        options: ['Sem luzes de advertência', 'Com luzes de advertência'] 
+      },
+      { 
+        id: 'higienizacao_interna', 
+        label: 'Higienização Interna', 
+        type: 'select', 
+        options: ['Cabine limpa', 'Não limpa'] 
+      },
+      { 
+        id: 'higienizacao_externa', 
+        label: 'Higienização Externa', 
+        type: 'select', 
+        options: ['Lavada', 'Não lavada'] 
+      }
     ]
   },
   {
     id: 'seguranca',
-    title: '4. Itens de Rodagem e Segurança',
+    title: '4. Pneus e Rodagem',
     icon: LifeBuoy,
     items: [
-      { id: 'pneus', label: 'Pneus (Calibragem e sulcos)' },
-      { id: 'estepe_ferramentas', label: 'Estepe e Ferramentas (Macaco, triângulo, chave)' },
-      { id: 'extintor_incendio', label: 'Extintor (Zona verde e validade)' }
+      { 
+        id: 'estado_pneus', 
+        label: 'Estado dos Pneus', 
+        type: 'select', 
+        options: [
+          'Novos (Sulcos profundos)', 
+          'Meia-vida (Desgaste moderado)', 
+          'Baixo/Careca (Requer troca imediata!)'
+        ] 
+      },
+      { id: 'calibragem_pneus', label: 'Calibragem (Verificada e ajustada)', type: 'boolean' },
+      { id: 'estepe_estado', label: 'Estepe (Presente, calibrado e em uso)', type: 'boolean' },
+      { id: 'avarias_pneus', label: 'Ausência de Bolhas/Cortes', type: 'boolean' },
+      { id: 'extintor_incendio', label: 'Extintor (Zona verde e validade)', type: 'boolean' }
     ]
   },
   {
@@ -114,8 +189,8 @@ const vehicleChecklistStructure = [
     title: '5. Documentação',
     icon: FileSearch,
     items: [
-      { id: 'documento_veiculo', label: 'Documento do Veículo (CRLV)' },
-      { id: 'cartao_abastecimento', label: 'Cartão de Abastecimento' }
+      { id: 'documento_veiculo', label: 'Documento do Veículo (CRLV)', type: 'boolean' },
+      { id: 'cartao_abastecimento', label: 'Cartão de Abastecimento', type: 'boolean' }
     ]
   }
 ];
@@ -124,7 +199,7 @@ export const VehicleChecklistDashboard: React.FC = () => {
   const { user, profile, loading: authLoading, quotaExceeded } = useAuth();
   const navigate = useNavigate();
 
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [checkedItems, setCheckedItems] = useState<Record<string, string | boolean>>({});
   const [formData, setFormData] = useState({
     prefixoPlaca: '',
     condutor: '',
@@ -176,8 +251,8 @@ export const VehicleChecklistDashboard: React.FC = () => {
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
   };
 
-  const handleCheck = (id: string) => {
-    setCheckedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  const handleValueChange = (id: string, value: string | boolean) => {
+    setCheckedItems(prev => ({ ...prev, [id]: value }));
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,8 +366,14 @@ export const VehicleChecklistDashboard: React.FC = () => {
 
         section.items.forEach(item => {
           if (yPos > 270) { doc.addPage(); yPos = 20; }
-          const isChecked = currentData.checks[item.id] ? '[X]' : '[ ]';
-          doc.text(`${isChecked} ${item.label}`, 25, yPos);
+          const value = currentData.checks[item.id];
+          let statusText = '';
+          if (typeof value === 'boolean') {
+            statusText = value ? '[X]' : '[ ]';
+          } else {
+            statusText = value ? `[${value}]` : '[ ]';
+          }
+          doc.text(`${statusText} ${item.label}`, 25, yPos);
           yPos += 6;
         });
         yPos += 4;
@@ -333,7 +414,10 @@ export const VehicleChecklistDashboard: React.FC = () => {
     let missing = '';
     vehicleChecklistStructure.forEach(s => {
       s.items.forEach(i => {
-        if (!currentData.checks[i.id]) missing += `• ${i.label}\n`;
+        const val = currentData.checks[i.id];
+        if (!val || val === 'Baixo' || val === 'Necessita troca' || val === 'Vazamento Detectado') {
+          missing += `• ${i.label}: ${val || 'NÃO CONFERIDO'}\n`;
+        }
       });
     });
 
@@ -453,17 +537,32 @@ export const VehicleChecklistDashboard: React.FC = () => {
                 </div>
                 <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-2">
                   {section.items.map(item => (
-                    <label key={item.id} className="flex items-center space-x-3 p-3 rounded-2xl hover:bg-gray-50 cursor-pointer group">
-                      <input 
-                        type="checkbox"
-                        checked={!!checkedItems[item.id]}
-                        onChange={() => handleCheck(item.id)}
-                        className="w-6 h-6 rounded-lg border-gray-300 text-samu-blue focus:ring-samu-blue/20"
-                      />
-                      <span className={`text-xs font-bold transition-colors ${checkedItems[item.id] ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {item.label}
-                      </span>
-                    </label>
+                    <div key={item.id} className="flex flex-col space-y-1 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-bold transition-colors ${checkedItems[item.id] ? 'text-gray-900' : 'text-gray-500'}`}>
+                          {item.label}
+                        </span>
+                        {item.type === 'boolean' ? (
+                          <input 
+                            type="checkbox"
+                            checked={!!checkedItems[item.id]}
+                            onChange={() => handleValueChange(item.id, !checkedItems[item.id])}
+                            className="w-6 h-6 rounded-lg border-gray-300 text-samu-blue focus:ring-samu-blue/20"
+                          />
+                        ) : (
+                          <select
+                            value={String(checkedItems[item.id] || '')}
+                            onChange={(e) => handleValueChange(item.id, e.target.value)}
+                            className="text-[10px] font-black uppercase border-none bg-gray-100 rounded-lg px-2 py-1 focus:ring-2 focus:ring-samu-orange/20"
+                          >
+                            <option value="">Selecione</option>
+                            {item.options?.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -622,12 +721,18 @@ export const VehicleChecklistDashboard: React.FC = () => {
                         <div key={section.id}>
                            <h4 className="text-[10px] font-black uppercase text-samu-red mb-2">{section.title}</h4>
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {section.items.map(item => (
-                                <div key={item.id} className="flex items-center gap-2 text-[10px] font-bold text-gray-600">
-                                   {viewingEntry.checks[item.id] ? <CheckSquare size={14} className="text-green-500" /> : <X size={14} className="text-red-300" />}
-                                   <span className={viewingEntry.checks[item.id] ? 'text-gray-800' : 'text-gray-400'}>{item.label}</span>
-                                </div>
-                              ))}
+                              {section.items.map(item => {
+                                const val = viewingEntry.checks[item.id];
+                                const isOk = typeof val === 'boolean' ? val : (val && val !== 'Baixo' && val !== 'Necessita troca');
+                                return (
+                                  <div key={item.id} className="flex items-center gap-2 text-[10px] font-bold text-gray-600">
+                                     {isOk ? <CheckSquare size={14} className="text-green-500" /> : <X size={14} className="text-red-300" />}
+                                     <span className={isOk ? 'text-gray-800' : 'text-gray-400'}>
+                                       {item.label} {typeof val === 'string' ? `(${val})` : ''}
+                                     </span>
+                                  </div>
+                                );
+                              })}
                            </div>
                         </div>
                       ))}

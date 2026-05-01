@@ -76,7 +76,7 @@ export interface VehicleChecklistData {
   kmInicial: string;
   kmFinal: string;
   checks: {
-    [key: string]: boolean;
+    [key: string]: string | boolean;
   };
   observacoes: string;
   createdAt: any;
