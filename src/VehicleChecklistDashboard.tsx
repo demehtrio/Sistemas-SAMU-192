@@ -508,14 +508,34 @@ export const VehicleChecklistDashboard: React.FC = () => {
           )}
         </section>
 
-        <div className="flex gap-4">
-          <button onClick={handleReset} className="flex-1 py-4 bg-white text-gray-400 border border-gray-200 rounded-2xl font-black uppercase tracking-widest text-[10px]">Reset</button>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button 
+            onClick={handleReset} 
+            className="py-4 bg-white text-gray-400 border border-gray-200 rounded-2xl font-black uppercase tracking-widest text-[10px]"
+          >
+            Reset
+          </button>
+          
+          <button 
+            onClick={() => generatePDF()}
+            className="py-4 bg-gray-800 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-gray-900 transition-all"
+          >
+            <Download size={16} /> PDF
+          </button>
+
+          <button 
+            onClick={() => shareWhatsApp()}
+            className="py-4 bg-green-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:bg-green-600 transition-all"
+          >
+            <Send size={16} /> WhatsApp
+          </button>
+
           <button 
             disabled={submitting}
             onClick={handleSubmit} 
-            className="flex-[2] py-4 bg-samu-red text-white rounded-2xl shadow-xl shadow-red-500/20 font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+            className="py-4 bg-samu-red text-white rounded-2xl shadow-xl shadow-red-500/20 font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
           >
-            {submitting ? 'Enviando...' : 'Finalizar Checklist'}
+            {submitting ? 'Enviando...' : 'Salvar no Banco'}
           </button>
         </div>
       </main>
