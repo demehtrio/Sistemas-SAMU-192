@@ -321,7 +321,7 @@ export const ChecklistDashboard: React.FC = () => {
       doc.setFont("helvetica", "bold");
       doc.text("SAMU 192", 105, 20, { align: "center" });
       doc.setFontSize(14);
-      doc.text(`CHECKLIST DE VIATURA - ${currentData.type}`, 105, 30, { align: "center" });
+      doc.text(`CHECKLIST DE SALÃO - ${currentData.type}`, 105, 30, { align: "center" });
 
       // Info Section
       doc.setTextColor(0, 0, 0);
@@ -539,7 +539,7 @@ export const ChecklistDashboard: React.FC = () => {
               <SamuLogo className="h-8 w-8 object-contain" />
             </div>
             <div>
-              <h1 className="text-lg font-black uppercase tracking-tight">Checklist de Viaturas</h1>
+              <h1 className="text-lg font-black uppercase tracking-tight">Checklist de Salão</h1>
               <p className="text-[10px] text-samu-orange font-bold uppercase tracking-widest">Sistemas SAMU 192 - Serra Talhada</p>
             </div>
           </div>

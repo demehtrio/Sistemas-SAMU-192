@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, ClipboardCheck, LogOut, User, Settings, Calendar, ExternalLink, Edit2, Check, X as CloseX } from 'lucide-react';
+import { FileText, ClipboardCheck, LogOut, User, Settings, Calendar, ExternalLink, Edit2, Check, X as CloseX, Truck } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { SamuLogo } from './components/SamuLogo';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -54,12 +54,20 @@ export const Home: React.FC = () => {
       path: '/permutas'
     },
     {
-      id: 'checklist',
-      title: 'Checklist de Viaturas',
+      id: 'checklist-materiais',
+      title: 'Checklist de Salão',
       description: 'Conferência diária de equipamentos e materiais (USA/USB).',
       icon: ClipboardCheck,
       color: 'bg-samu-red',
       path: '/checklist'
+    },
+    {
+      id: 'checklist-vtr',
+      title: 'Checklist VTR',
+      description: 'Checklist mecânico, elétrico e itens de segurança do veículo.',
+      icon: Truck,
+      color: 'bg-samu-orange',
+      path: '/checklist-viatura'
     }
   ];
 
@@ -102,8 +110,8 @@ export const Home: React.FC = () => {
 
         {/* Banner Escalas */}
         <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
           className="mb-12 bg-gradient-to-r from-samu-blue to-blue-700 rounded-3xl p-6 shadow-2xl text-white relative overflow-hidden group"
         >
           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">

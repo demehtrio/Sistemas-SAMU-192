@@ -65,3 +65,19 @@ export interface NotificationData {
   createdAt: string;
   permutaId?: string;
 }
+
+export interface VehicleChecklistData {
+  id: string;
+  userId: string;
+  condutor: string;
+  prefixoPlaca: string;
+  date: string;
+  turno: string;
+  kmInicial: string;
+  kmFinal: string;
+  checks: {
+    [key: string]: boolean;
+  };
+  observacoes: string;
+  createdAt: any;
+}

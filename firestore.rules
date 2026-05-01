@@ -83,7 +83,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // --- Checklists ---
+    // --- Checklists (Materials) ---
     match /checklists/{checklistId} {
       function isValidChecklist(data) {
         return data.keys().hasAll(['userId', 'date', 'type', 'createdAt']) &&
@@ -97,8 +97,27 @@ service cloud.firestore {
       allow delete: if isOwner(existing().userId) || isAdmin();
     }
 
-    // --- Settings ---
+    // --- Vehicle Checklists ---
+    match /vehicle_checklists/{vChecklistId} {
+      function isValidVehicleChecklist(data) {
+        return data.keys().hasAll(['userId', 'date', 'prefixoPlaca', 'createdAt']) &&
+               data.userId == request.auth.uid;
+      }
+
+      allow read: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      allow create: if isVerified() && isValidVehicleChecklist(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // --- Settings / Config ---
     match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /config/{configId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }

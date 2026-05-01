@@ -5,6 +5,7 @@ import { Login } from './Login';
 import { Register } from './Register';
 import Dashboard, { ErrorBoundary } from './Dashboard';
 import { ChecklistDashboard } from './ChecklistDashboard';
+import { VehicleChecklistDashboard } from './VehicleChecklistDashboard';
 import { Home } from './Home';
 import { SamuLogo } from './components/SamuLogo';
 
@@ -122,6 +123,16 @@ function AppContent() {
               <ProtectedRoute>
                 <ErrorBoundary>
                   <ChecklistDashboard />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checklist-viatura"
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <VehicleChecklistDashboard />
                 </ErrorBoundary>
               </ProtectedRoute>
             }

@@ -43,7 +43,7 @@
     },
     "Checklist": {
       "title": "Checklist",
-      "description": "Vehicle checklist",
+      "description": "Materials checklist",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -54,6 +54,24 @@
         "checkedItems": { "type": "object" },
         "outros": { "type": "object" },
         "status": { "type": "string" }
+      }
+    },
+    "VehicleChecklist": {
+      "title": "Vehicle Checklist",
+      "description": "Daily inspection of the ambulance vehicle",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "condutor": { "type": "string" },
+        "prefixoPlaca": { "type": "string" },
+        "date": { "type": "string" },
+        "turno": { "type": "string" },
+        "kmInicial": { "type": "number" },
+        "kmFinal": { "type": "number" },
+        "checks": { "type": "object" },
+        "observacoes": { "type": "string" },
+        "createdAt": { "type": "string" }
       }
     },
     "Config": {
@@ -80,9 +98,17 @@
       "schema": "Checklist",
       "description": "Vehicle checklists"
     },
+    "/vehicle_checklists/{vChecklistId}": {
+      "schema": "VehicleChecklist",
+      "description": "Vehicle maintenance daily checklists"
+    },
     "/settings/{settingId}": {
       "schema": "Config",
       "description": "System settings"
+    },
+    "/config/{configId}": {
+      "schema": "object",
+      "description": "Checklist templates and other configurations"
     }
   }
 }
