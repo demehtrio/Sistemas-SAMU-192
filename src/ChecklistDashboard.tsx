@@ -397,17 +397,35 @@ export const ChecklistDashboard: React.FC = () => {
       registro: formData.registro,
       turno: formData.turno,
       date: new Date().toISOString(),
+      checkedItems,
+      outros,
       formData
     };
 
-    const text = `*CHECKLIST SAMU 192 - SERRA TALHADA*\n\n` +
-      `*Tipo:* ${currentData.type}\n` +
+    const categories = currentData.type === 'USA' ? dynamicChecklistUSA : dynamicChecklistUSB;
+    let missingItemsText = '';
+
+    categories.forEach((category: any) => {
+      const missingInCategory = category.items.filter((i: any) => !currentData.checkedItems[i.id]);
+      const categoryOutros = currentData.outros[category.id];
+
+      if (missingInCategory.length > 0) {
+        missingInCategory.forEach((item: any) => {
+          missingItemsText += `• ${item.label}\n`;
+        });
+      }
+      
+      if (categoryOutros) {
+        missingItemsText += `• OBS (${category.title}): ${categoryOutros}\n`;
+      }
+    });
+
+    const text = `*CHECKLIST SAMU 192 - ${currentData.type}*\n` +
       `*Servidor:* ${currentData.enfermeiro}\n` +
-      `*Registro:* ${currentData.registro || 'N/A'}\n` +
-      `*Turno:* ${currentData.turno}\n` +
-      `*Data:* ${format(new Date(currentData.date), 'dd/MM/yyyy HH:mm')}\n` +
-      `*Status:* ✅ CONCLUÍDO\n\n` +
-      `*Observações:* ${currentData.formData.observacoes || 'Sem observações.'}`;
+      `*Turno:* ${currentData.turno} - ${format(new Date(currentData.date), 'dd/MM/yyyy HH:mm')}\n` +
+      `*Status:* ${missingItemsText ? '⚠️ PENDÊNCIAS' : '✅ TUDO OK'}\n` +
+      (missingItemsText ? `\n*ITENS EM FALTA / OBS:*\n${missingItemsText}` : '') +
+      (currentData.formData.observacoes ? `\n*Obs Gerais:* ${currentData.formData.observacoes}` : '');
 
     const encodedText = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encodedText}`, '_blank');

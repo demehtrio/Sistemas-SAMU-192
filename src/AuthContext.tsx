@@ -30,6 +30,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  quotaExceeded: boolean;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   registerProfile: (userData: Omit<UserProfile, 'uid' | 'createdAt'>) => Promise<boolean>;
@@ -40,6 +41,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  quotaExceeded: false,
   signOut: async () => {},
   signInWithGoogle: async () => {},
   registerProfile: async () => false,
@@ -52,8 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   useEffect(() => {
+    // Listen for custom quota-exceeded events
+    const handleQuotaError = () => setQuotaExceeded(true);
+    window.addEventListener('firestore-quota-exceeded', handleQuotaError);
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -122,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, 
       profile, 
       loading, 
+      quotaExceeded,
       signOut,
       signInWithGoogle,
       registerProfile,
