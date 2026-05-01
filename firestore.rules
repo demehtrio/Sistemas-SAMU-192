@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Pillars & Helpers
+    function isSignedIn() { return request.auth != null; }
+    // Note: We use isVerified() for writes to ensure email integrity
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { 
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'coordenacao'; 
+    }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // --- Users ---
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['name', 'role']) &&
+               data.name is string && data.name.size() <= 100 &&
+               data.role is string;
+      }
+
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      
+      allow create: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().role != 'coordenacao' || 
+        // Allow first user or bootstrap admin if needed
+        !exists(/databases/$(database)/documents/users/$(userId)) 
+      );
+      
+      allow update: if isOwner(userId) && 
+                    isValidUser(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'registration', 'cargo', 'base', 'cpf', 'coren', 'role', 'updatedAt', 'lastLogin']) &&
+                    (incoming().role == existing().role || isAdmin());
+    }
+
+    // --- Permutas ---
+    match /permutas/{permutaId} {
+      function isValidPermuta(data) {
+        return data.keys().hasAll(['requesterId', 'substituteId', 'status', 'createdAt']) &&
+               data.requesterId is string && data.substituteId is string &&
+               data.status is string &&
+               data.requesterName is string &&
+               (!data.keys().contains('reason') || data.reason.size() <= 1000);
+      }
+
+      allow read: if isSignedIn() && (isOwner(existing().requesterId) || isOwner(existing().substituteId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.requesterId == request.auth.uid || resource.data.substituteId == request.auth.uid || isAdmin());
+
+      allow create: if isVerified() && isOwner(incoming().requesterId) && isValidPermuta(incoming()) &&
+                    exists(/databases/$(database)/documents/users/$(incoming().substituteId));
+
+      allow update: if isVerified() && (
+        // Substitute action (Accept/Reject)
+        (isOwner(existing().substituteId) && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'substituteSignedAt', 'substituteCpf', 'substituteCoren', 'updatedAt']) &&
+         incoming().status in ['pendente_coordenacao', 'rejeitada']) ||
+        
+        // Coordination action (Approve/Reject)
+        (isAdmin() && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'coordinatorSignedAt', 'coordinatorName', 'coordinatorCpf', 'coordinatorCoren', 'updatedAt'])) ||
+        
+        // Requester cancellation
+        (isOwner(existing().requesterId) && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) && 
+         incoming().status == 'cancelada')
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // --- Checklists ---
+    match /checklists/{checklistId} {
+      function isValidChecklist(data) {
+        return data.keys().hasAll(['userId', 'date', 'type', 'createdAt']) &&
+               data.userId == request.auth.uid;
+      }
+
+      allow read: if isSignedIn() && (isOwner(existing().userId) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      allow create: if isVerified() && isValidChecklist(incoming());
+      allow delete: if isOwner(existing().userId) || isAdmin();
+    }
+
+    // --- Config / Templates ---
+    match /config/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

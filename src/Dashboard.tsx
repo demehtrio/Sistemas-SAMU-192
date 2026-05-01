@@ -7,6 +7,21 @@ import { jsPDF } from 'jspdf';
 import { twMerge } from 'tailwind-merge';
 import { AdminPanel } from './AdminPanel';
 import { SamuLogo } from './components/SamuLogo';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp,
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
+import { db } from './lib/firebase';
+import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 
 export class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error: any }> {
   constructor(props: any) {
@@ -343,63 +358,33 @@ const Dashboard: React.FC = () => {
   const [signingError, setSigningError] = useState('');
   const [isSigning, setIsSigning] = useState(false);
 
-  // History Listener (LocalStorage)
+  // Firestore Listener
   useEffect(() => {
     if (!profile) return;
 
-    const loadData = () => {
-      try {
-        const savedPermutas = localStorage.getItem('samu_permutas');
-        if (!savedPermutas) {
-          setMinhasPermutas([]);
-          setPermutasRecebidas([]);
-          setPermutasCoordenacao([]);
-          setPermutasAprovadas([]);
-          return;
-        }
-
-        const allPermutas = JSON.parse(savedPermutas);
-        if (!Array.isArray(allPermutas)) {
-          setMinhasPermutas([]);
-          setPermutasRecebidas([]);
-          setPermutasCoordenacao([]);
-          setPermutasAprovadas([]);
-          return;
-        }
-        
-        // Filter for me
-        setMinhasPermutas(allPermutas.filter((p: any) => p.requesterId === profile.uid && p.status !== 'aprovada'));
-        
-        // Received but not yet acted upon by substitute
-        setPermutasRecebidas(allPermutas.filter((p: any) => 
-          p.substituteId === profile.uid && 
-          p.status === 'pendente_substituto'
-        ));
-        
-        if (profile.role === 'coordenacao') {
-          setPermutasCoordenacao(allPermutas.filter((p: any) => p.status === 'pendente_coordenacao'));
-        }
-
-        const history = allPermutas.filter((p: any) => 
-          (p.status === 'aprovada' || p.status === 'approved') && 
-          (profile.role === 'coordenacao' || p.requesterId === profile.uid || p.substituteId === profile.uid)
-        ).sort((a: any, b: any) => {
-          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return dateB - dateA;
-        });
-        
-        setPermutasAprovadas(history);
-      } catch (err) {
-        console.error("Error loading permutas:", err);
+    const q = query(collection(db, 'permutas'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allPermutas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      setMinhasPermutas(allPermutas.filter((p: any) => p.requesterId === profile.uid && p.status !== 'aprovada'));
+      setPermutasRecebidas(allPermutas.filter((p: any) => 
+        p.substituteId === profile.uid && 
+        p.status === 'pendente_substituto'
+      ));
+      
+      if (profile.role === 'coordenacao') {
+        setPermutasCoordenacao(allPermutas.filter((p: any) => p.status === 'pendente_coordenacao'));
       }
-    };
 
-    loadData();
-    
-    // Check for updates every 5 seconds (simulated live)
-    const interval = setInterval(loadData, 5000);
-    return () => clearInterval(interval);
+      setPermutasAprovadas(allPermutas.filter((p: any) => 
+        (p.status === 'aprovada' || p.status === 'approved') && 
+        (profile.role === 'coordenacao' || p.requesterId === profile.uid || p.substituteId === profile.uid)
+      ));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'permutas');
+    });
+
+    return () => unsubscribe();
   }, [profile]);
 
   const initiateSign = (permutaId: string, status: 'approved' | 'rejected') => {
@@ -416,17 +401,9 @@ const Dashboard: React.FC = () => {
     setSigningError('');
 
     try {
-      const savedPermutas = localStorage.getItem('samu_permutas');
-      const allPermutas = savedPermutas ? JSON.parse(savedPermutas) : [];
-      const permutaIdx = allPermutas.findIndex((p: any) => p.id === signingPermutaId);
-      
-      if (permutaIdx === -1) throw new Error("Permuta não encontrada");
-
-      const permuta = allPermutas[permutaIdx];
       let nextStatus = signingStatus === 'approved' ? 'aprovada' : 'rejeitada';
       
       const updateData: any = {
-        ...permuta,
         status: nextStatus,
         updatedAt: new Date().toISOString()
       };
@@ -445,14 +422,13 @@ const Dashboard: React.FC = () => {
         }
       }
 
-      allPermutas[permutaIdx] = updateData;
-      localStorage.setItem('samu_permutas', JSON.stringify(allPermutas));
+      await updateDoc(doc(db, 'permutas', signingPermutaId), updateData);
       
       setSigningPermutaId(null);
       setSigningStatus(null);
-      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta assinada localmente!" }));
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta assinada com sucesso!" }));
     } catch (error: any) {
-      console.error("Erro ao assinar permuta:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `permutas/${signingPermutaId}`);
       setSigningError("Erro ao assinar. Tente novamente.");
     } finally {
       setIsSigning(false);
@@ -469,15 +445,10 @@ const Dashboard: React.FC = () => {
   const confirmDeletePermuta = async () => {
     if (!deleteConfirmId) return;
     try {
-      const savedPermutas = localStorage.getItem('samu_permutas');
-      if (savedPermutas) {
-        const allPermutas = JSON.parse(savedPermutas);
-        const newList = allPermutas.filter((p: any) => p.id !== deleteConfirmId);
-        localStorage.setItem('samu_permutas', JSON.stringify(newList));
-      }
-      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída localmente.' }));
+      await deleteDoc(doc(db, 'permutas', deleteConfirmId));
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída com sucesso.' }));
     } catch (error) {
-      console.error(error);
+      handleFirestoreError(error, OperationType.DELETE, `permutas/${deleteConfirmId}`);
     } finally {
       setDeleteConfirmId(null);
     }
@@ -538,7 +509,7 @@ const Dashboard: React.FC = () => {
         </p>
         <div className="space-y-4">
           <button
-            onClick={() => window.location.href = '/#/signup'}
+            onClick={() => window.location.href = '/#/register'}
             className="w-full flex justify-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-xs font-black uppercase tracking-widest text-white bg-orange-600 hover:bg-orange-700 transition-all active:scale-95"
           >
             Tentar Cadastrar Novamente
@@ -1228,21 +1199,28 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
   }, [substituteId, users]);
 
   useEffect(() => {
-    // Load local list of registered users
-    const registeredUsers = localStorage.getItem('samu_registered_users');
-    const usersList = registeredUsers ? JSON.parse(registeredUsers) : [];
+    if (!profile) return;
     
-    // Filter to show only other registered users (not the current user)
-    const mappedUsers = usersList.map((u: any) => ({
-      id: u.uid || u.id,
-      name: u.name,
-      cargo: u.cargo || u.role,
-      base: u.base || 'Serra Talhada',
-      cpf: u.cpf,
-      coren: u.registration || u.coren || ''
-    }));
+    // Load users from Firestore
+    const q = query(collection(db, 'users'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const mappedUsers = snapshot.docs.map((d: any) => {
+        const u = d.data();
+        return {
+          id: d.id,
+          name: u.name,
+          cargo: u.cargo || u.role,
+          base: u.base || 'Serra Talhada',
+          cpf: u.cpf,
+          coren: u.registration || u.coren || ''
+        };
+      });
+      setUsers(mappedUsers.filter((u: any) => u.id !== profile?.uid));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'users');
+    });
 
-    setUsers(mappedUsers.filter((u: any) => u.id !== profile?.uid));
+    return () => unsubscribe();
   }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1255,7 +1233,6 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
       if (!substitute) throw new Error("Substituto não encontrado");
 
       const newPermuta = {
-        id: `permuta_${Date.now()}`,
         unitType,
         base,
         requesterId: profile.uid,
@@ -1278,15 +1255,12 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
         createdAt: new Date().toISOString()
       };
 
-      const savedPermutas = localStorage.getItem('samu_permutas');
-      const allPermutas = savedPermutas ? JSON.parse(savedPermutas) : [];
-      allPermutas.push(newPermuta);
-      localStorage.setItem('samu_permutas', JSON.stringify(allPermutas));
+      await addDoc(collection(db, 'permutas'), newPermuta);
 
-      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta solicitada localmente!" }));
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta solicitada com sucesso!" }));
       onCancel();
     } catch (error: any) {
-      console.error("Erro ao criar permuta:", error);
+      handleFirestoreError(error, OperationType.CREATE, 'permutas');
       window.dispatchEvent(new CustomEvent('show-error-toast', { detail: "Erro ao criar permuta." }));
     } finally {
       setLoading(false);
@@ -1359,21 +1333,21 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-10 space-y-12">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-10 space-y-12">
           {/* Seção 1: Localização */}
           <div className="space-y-6">
             <div className="flex items-center space-x-3 mb-4">
               <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400">01</span>
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Unidade e Base</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Unidade</label>
                 <select
                   required
                   value={unitType}
                   onChange={(e) => setUnitType(e.target.value)}
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-slate-700"
                 >
                   <option value="">Selecione...</option>
                   {UNIT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -1382,18 +1356,17 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Base / Localidade</label>
                 <input
-                  type="text"
                   required
                   placeholder="Ex: Serra Talhada"
                   value={base}
                   onChange={(e) => setBase(e.target.value)}
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-slate-700"
                 />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
             {/* Seção 2: Solicitante */}
             <div className="space-y-6">
               <div className="flex items-center space-x-3 mb-4">
@@ -1417,7 +1390,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                     {SAMU_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sua Data</label>
                     <input
@@ -1425,7 +1398,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                       required
                       value={requesterDate}
                       onChange={(e) => setRequesterDate(e.target.value)}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-slate-700"
+                      className="w-full px-3 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-xs sm:text-sm text-slate-700"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1434,7 +1407,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                       required
                       value={requesterShift}
                       onChange={(e) => setRequesterShift(e.target.value)}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-slate-700"
+                      className="w-full px-3 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-blue/10 focus:border-samu-blue outline-none transition-all font-bold text-xs sm:text-sm text-slate-700"
                     >
                       <option value="">Turno...</option>
                       <option value="Diurno">Diurno</option>
@@ -1477,7 +1450,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                     {SAMU_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Data do Colega</label>
                     <input
@@ -1485,7 +1458,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                       required
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                      className="w-full px-3 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-xs sm:text-sm text-slate-700"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1494,7 +1467,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                       required
                       value={shift}
                       onChange={(e) => setShift(e.target.value)}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-slate-700"
+                      className="w-full px-3 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-samu-orange/10 focus:border-samu-orange outline-none transition-all font-bold text-xs sm:text-sm text-slate-700"
                     >
                       <option value="">Turno...</option>
                       <option value="Diurno">Diurno</option>

@@ -1,4 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { 
+  onAuthStateChanged, 
+  signOut as firebaseSignOut,
+  User
+} from 'firebase/auth';
+import { 
+  doc, 
+  getDoc, 
+  setDoc, 
+  updateDoc,
+  serverTimestamp 
+} from 'firebase/firestore';
+import { auth, db, signInWithGoogle as firebaseSignInWithGoogle } from './lib/firebase';
 
 export interface UserProfile {
   uid: string;
@@ -6,8 +19,7 @@ export interface UserProfile {
   email: string;
   role: 'servidor' | 'coordenacao';
   registration?: string; // CRM/COREN/MATRICULA
-  password?: string;
-  createdAt: string;
+  createdAt: any;
   cargo?: string;
   base?: string;
   cpf?: string;
@@ -15,110 +27,104 @@ export interface UserProfile {
 }
 
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  quotaExceeded: boolean;
   signOut: () => Promise<void>;
-  login: (email: string, password: string) => boolean;
-  register: (userData: Omit<UserProfile, 'uid' | 'createdAt'>) => boolean;
-  updateProfile: (data: Partial<UserProfile>) => void;
+  signInWithGoogle: () => Promise<void>;
+  registerProfile: (userData: Omit<UserProfile, 'uid' | 'createdAt'>) => Promise<boolean>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
-  quotaExceeded: false,
   signOut: async () => {},
-  login: () => false,
-  register: () => false,
-  updateProfile: () => {},
+  signInWithGoogle: async () => {},
+  registerProfile: async () => false,
+  updateProfile: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const sessionActive = localStorage.getItem('samu_session_active');
-    const currentUserEmail = localStorage.getItem('samu_current_user_email');
-    const users = JSON.parse(localStorage.getItem('samu_registered_users') || '[]');
-
-    if (sessionActive === 'true' && currentUserEmail) {
-      const user = users.find((u: UserProfile) => u.email === currentUserEmail);
-      if (user) {
-        setProfile(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        const docRef = doc(db, 'users', firebaseUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProfile(docSnap.data() as UserProfile);
+        } else {
+          setProfile(null);
+        }
       } else {
-        localStorage.removeItem('samu_session_active');
-        localStorage.removeItem('samu_current_user_email');
+        setProfile(null);
       }
-    }
-    
-    setLoading(false);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const signOut = async () => {
-    localStorage.removeItem('samu_session_active');
-    localStorage.removeItem('samu_current_user_email');
-    setProfile(null);
+    await firebaseSignOut(auth);
   };
 
-  const login = (email: string, password: string) => {
-    const users = JSON.parse(localStorage.getItem('samu_registered_users') || '[]');
-    const user = users.find((u: UserProfile) => u.email === email && u.password === password);
-    
-    if (user) {
-      localStorage.setItem('samu_session_active', 'true');
-      localStorage.setItem('samu_current_user_email', email);
-      setProfile(user);
+  const signInWithGoogle = async () => {
+    try {
+      await firebaseSignInWithGoogle();
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      throw error;
+    }
+  };
+
+  const registerProfile = async (userData: Omit<UserProfile, 'uid' | 'createdAt'>) => {
+    if (!user) return false;
+
+    try {
+      const profileData: UserProfile = {
+        ...userData,
+        uid: user.uid,
+        email: user.email!,
+        createdAt: serverTimestamp()
+      };
+
+      await setDoc(doc(db, 'users', user.uid), profileData);
+      setProfile(profileData);
       return true;
+    } catch (error) {
+      console.error('Error registering profile:', error);
+      return false;
     }
-    return false;
   };
 
-  const register = (userData: Omit<UserProfile, 'uid' | 'createdAt'>) => {
-    const users = JSON.parse(localStorage.getItem('samu_registered_users') || '[]');
-    
-    if (users.find((u: UserProfile) => u.email === userData.email)) {
-      return false; // Email already taken
+  const updateProfile = async (data: Partial<UserProfile>) => {
+    if (!user || !profile) return;
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      await updateDoc(docRef, data);
+      setProfile({ ...profile, ...data });
+    } catch (error) {
+      console.error('Error updating profile:', error);
     }
-
-    const newUser: UserProfile = {
-      ...userData,
-      uid: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedUsers = [...users, newUser];
-    localStorage.setItem('samu_registered_users', JSON.stringify(updatedUsers));
-    return true;
   };
-
-  const updateProfile = (data: Partial<UserProfile>) => {
-    if (!profile) return;
-    const updatedProfile = { ...profile, ...data };
-    setProfile(updatedProfile);
-    
-    // Update in users list
-    const users = JSON.parse(localStorage.getItem('samu_registered_users') || '[]');
-    const updatedUsers = users.map((u: UserProfile) => u.uid === profile.uid ? updatedProfile : u);
-    localStorage.setItem('samu_registered_users', JSON.stringify(updatedUsers));
-  };
-
-  const user = profile ? { uid: profile.uid, email: profile.email, displayName: profile.name } : null;
 
   return (
     <AuthContext.Provider value={{ 
       user, 
       profile, 
       loading, 
-      quotaExceeded: false, 
       signOut,
-      login,
-      register,
+      signInWithGoogle,
+      registerProfile,
       updateProfile 
     }}>
       {children}

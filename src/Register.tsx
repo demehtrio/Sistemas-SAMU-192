@@ -1,23 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, ArrowLeft, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { UserPlus, ShieldCheck, LogOut } from 'lucide-react';
 import { SamuLogo } from './components/SamuLogo';
 import { useAuth } from './AuthContext';
 
 export const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const { user, profile, registerProfile, signOut } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: '',
     registration: '',
     cpf: '',
     cargo: 'Enfermeiro',
     role: 'servidor' as 'servidor' | 'coordenacao',
   });
   const [error, setError] = useState('');
-  const navigate = useNavigate();
-  const { register } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    } else if (profile) {
+      navigate('/');
+    } else {
+      // Pre-fill name from Google if available
+      setFormData(prev => ({
+        ...prev,
+        name: user.displayName || ''
+      }));
+    }
+  }, [user, profile, navigate]);
 
   const cargos = [
     'Médico(a)',
@@ -34,20 +47,16 @@ export const Register: React.FC = () => {
     e.preventDefault();
     setError('');
     
-    if (!formData.name || !formData.email || !formData.password || !formData.registration || !formData.cpf) {
+    if (!formData.name || !formData.registration || !formData.cpf) {
       setError('Todos os campos são obrigatórios');
       return;
     }
 
     setLoading(true);
     
-    // Simulate minor delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const success = register({
+    const success = await registerProfile({
       name: formData.name,
-      email: formData.email,
-      password: formData.password,
+      email: user?.email || '',
       registration: formData.registration,
       cpf: formData.cpf,
       cargo: formData.cargo,
@@ -55,23 +64,25 @@ export const Register: React.FC = () => {
     });
 
     if (success) {
-      navigate('/login', { state: { message: 'Cadastro realizado com sucesso! Faça login.' } });
+      navigate('/');
     } else {
-      setError('Este e-mail já está cadastrado');
+      setError('Erro ao salvar perfil. Tente novamente.');
     }
     
     setLoading(false);
   };
 
+  if (!user) return null;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="flex justify-center flex-col items-center">
           <div className="bg-white p-2 rounded-full shadow-md mb-4">
             <SamuLogo className="h-24 w-24 object-contain" />
           </div>
-          <h1 className="text-2xl font-black text-samu-blue">Novo Cadastro</h1>
-          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">SAMU 192 Serra Talhada</p>
+          <h1 className="text-2xl font-black text-samu-blue">Concluir Perfil</h1>
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">Olá, {user.email}</p>
         </div>
       </div>
 
@@ -79,7 +90,7 @@ export const Register: React.FC = () => {
         <div className="bg-white py-8 px-4 shadow-xl rounded-3xl sm:px-10 border border-gray-100">
           <form className="space-y-5" onSubmit={handleRegister}>
             <div>
-              <label className="block text-xs font-black text-samu-blue uppercase tracking-widest mb-1 shadow-current">
+              <label className="block text-xs font-black text-samu-blue uppercase tracking-widest mb-1">
                 Nome Completo
               </label>
               <input
@@ -89,20 +100,6 @@ export const Register: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-samu-blue focus:ring-2 focus:ring-samu-blue/10 outline-none transition-all font-medium text-sm"
                 placeholder="Ex: João da Silva"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-samu-blue uppercase tracking-widest mb-1">
-                E-mail / Login
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-samu-blue focus:ring-2 focus:ring-samu-blue/10 outline-none transition-all font-medium text-sm"
-                placeholder="seuemail@exemplo.com"
               />
             </div>
 
@@ -174,20 +171,6 @@ export const Register: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-black text-samu-blue uppercase tracking-widest mb-1">
-                Senha
-              </label>
-              <input
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-samu-blue focus:ring-2 focus:ring-samu-blue/10 outline-none transition-all font-medium text-sm"
-                placeholder="Crie sua senha"
-              />
-            </div>
-
             {error && (
               <p className="text-[10px] font-bold text-samu-red uppercase tracking-tight bg-red-50 p-2 rounded-lg text-center">
                 {error}
@@ -204,17 +187,19 @@ export const Register: React.FC = () => {
               ) : (
                 <>
                   <UserPlus size={18} />
-                  Finalizar Cadastro
+                  Concluir Cadastro
                 </>
               )}
             </button>
 
-            <div className="flex items-center justify-center pt-2">
-              <Link to="/login" className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-samu-blue transition-colors uppercase tracking-widest">
-                <ArrowLeft size={14} />
-                Já tenho conta (Login)
-              </Link>
-            </div>
+            <button
+              type="button"
+              onClick={() => signOut()}
+              className="w-full flex justify-center items-center gap-2 py-3 text-xs font-bold text-gray-400 hover:text-samu-red transition-all uppercase tracking-widest"
+            >
+              <LogOut size={14} />
+              Usar outra conta
+            </button>
           </form>
         </div>
       </div>

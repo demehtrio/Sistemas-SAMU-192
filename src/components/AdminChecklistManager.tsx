@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { X, Save, Plus, Trash2, Edit2, PlusCircle } from 'lucide-react';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { handleFirestoreError, OperationType } from '../lib/firestoreUtils';
 
 interface AdminChecklistManagerProps {
   type: 'USA' | 'USB';
@@ -12,17 +15,17 @@ const AdminChecklistManager: React.FC<AdminChecklistManagerProps> = ({ type, ini
   const [data, setData] = useState<any[]>([...initialData]);
   const [saving, setSaving] = useState(false);
 
-  const saveToLocal = async () => {
+  const saveToFirestore = async () => {
     setSaving(true);
     try {
-      localStorage.setItem(`checklist_templates_${type}`, JSON.stringify({
+      await setDoc(doc(db, 'config', `checklist_templates_${type}`), {
         categories: data,
-        updatedAt: new Date().toISOString()
-      }));
+        updatedAt: serverTimestamp()
+      });
       onSave(data);
     } catch (error) {
-      console.error("Error saving template:", error);
-      alert("Erro ao salvar template localmente.");
+      handleFirestoreError(error, OperationType.WRITE, `config/checklist_templates_${type}`);
+      alert("Erro ao salvar template no servidor.");
     } finally {
       setSaving(false);
     }
@@ -159,12 +162,12 @@ const AdminChecklistManager: React.FC<AdminChecklistManagerProps> = ({ type, ini
             Cancelar
           </button>
           <button 
-            onClick={saveToLocal}
+            onClick={saveToFirestore}
             disabled={saving}
             className="flex items-center gap-2 px-8 py-3 bg-samu-blue text-white rounded-xl font-black uppercase tracking-widest transition-all hover:bg-samu-blue-hover shadow-lg active:scale-95 disabled:opacity-50"
           >
             <Save size={20} />
-            {saving ? 'Salvando...' : 'Salvar Alterações'}
+            {saving ? 'Salvando...' : 'Publicar Alterações'}
           </button>
         </div>
       </div>

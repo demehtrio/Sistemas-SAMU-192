@@ -49,6 +49,19 @@ import {
   Download,
   MessageCircle
 } from 'lucide-react';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp,
+  orderBy
+} from 'firebase/firestore';
+import { db } from './lib/firebase';
+import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 import { motion, AnimatePresence } from 'motion/react';
 import AdminChecklistManager from './components/AdminChecklistManager';
 import { useNavigate } from 'react-router-dom';
@@ -134,58 +147,51 @@ export const ChecklistDashboard: React.FC = () => {
     }
   }, [profile, user]);
 
-  // Load Templates (LocalStorage)
+  // Load Templates (Firestore)
   useEffect(() => {
-    const loadTemplates = () => {
-      try {
-        const savedUSA = localStorage.getItem('checklist_templates_USA');
-        if (savedUSA) {
-          const parsed = JSON.parse(savedUSA);
-          if (parsed && parsed.categories) {
-            setDynamicChecklistUSA(parsed.categories);
-          }
-        }
-        
-        const savedUSB = localStorage.getItem('checklist_templates_USB');
-        if (savedUSB) {
-          const parsed = JSON.parse(savedUSB);
-          if (parsed && parsed.categories) {
-            setDynamicChecklistUSB(parsed.categories);
-          }
-        }
-      } catch (err) {
-        console.error("Error loading templates:", err);
+    const unsubUSA = onSnapshot(doc(db, 'config', 'checklist_templates_USA'), (d) => {
+      if (d.exists()) {
+        const data = d.data();
+        if (data.categories) setDynamicChecklistUSA(data.categories);
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'config/checklist_templates_USA');
+    });
+
+    const unsubUSB = onSnapshot(doc(db, 'config', 'checklist_templates_USB'), (d) => {
+      if (d.exists()) {
+        const data = d.data();
+        if (data.categories) setDynamicChecklistUSB(data.categories);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'config/checklist_templates_USB');
+    });
+
+    return () => {
+      unsubUSA();
+      unsubUSB();
     };
-    
-    loadTemplates();
   }, []);
 
-  // History Loader (LocalStorage)
+  // History Loader (Firestore)
   useEffect(() => {
-    if (!showHistory) return;
+    if (!showHistory || !profile) return;
     
-    const loadHistory = () => {
-      try {
-        const savedHistory = localStorage.getItem('samu_checklists_history');
-        if (savedHistory) {
-          const parsed = JSON.parse(savedHistory);
-          if (Array.isArray(parsed)) {
-            const sortedHistory = parsed.sort((a: any, b: any) => {
-              const dateA = a.date ? new Date(a.date).getTime() : 0;
-              const dateB = b.date ? new Date(b.date).getTime() : 0;
-              return dateB - dateA;
-            }).slice(0, 50);
-            setHistory(sortedHistory);
-          }
-        }
-      } catch (err) {
-        console.error("Error loading history:", err);
-      }
-    };
+    const q = query(
+      collection(db, 'checklists'), 
+      where('userId', '==', profile.uid),
+      orderBy('date', 'desc')
+    );
     
-    loadHistory();
-  }, [showHistory]);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const historyList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as HistoryEntry[];
+      setHistory(historyList);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'checklists');
+    });
+
+    return () => unsubscribe();
+  }, [showHistory, profile]);
 
   if (authLoading) {
     return (
@@ -243,10 +249,10 @@ export const ChecklistDashboard: React.FC = () => {
 
   const saveHistory = async () => {
     try {
-      const docId = `check_${Date.now()}`;
-      const newEntry: HistoryEntry = {
-        id: docId,
-        userId: user?.uid || 'local',
+      if (!profile) return;
+      
+      const newEntry = {
+        userId: profile.uid,
         date: new Date().toISOString(),
         type: checklistType,
         enfermeiro: formData.enfermeiro,
@@ -256,18 +262,14 @@ export const ChecklistDashboard: React.FC = () => {
         outros,
         formData,
         photos,
-        createdAt: new Date().toISOString()
+        createdAt: serverTimestamp()
       };
 
-      const savedHistory = localStorage.getItem('samu_checklists_history');
-      const historyList = savedHistory ? JSON.parse(savedHistory) : [];
-      historyList.push(newEntry);
-      localStorage.setItem('samu_checklists_history', JSON.stringify(historyList));
-      
-      showToastMessage('Checklist salvo localmente!');
+      await addDoc(collection(db, 'checklists'), newEntry);
+      showToastMessage('Checklist salvo com sucesso!');
     } catch (err) {
-      console.error(err);
-      showToastMessage('Erro ao salvar no dispositivo.', 'error');
+      handleFirestoreError(err, OperationType.CREATE, 'checklists');
+      showToastMessage('Erro ao salvar checklist.', 'error');
     }
   };
 
@@ -540,8 +542,8 @@ export const ChecklistDashboard: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-6">
         {/* Form Info */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-1">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Nome Completo</label>
             <input 
               value={formData.enfermeiro} 
@@ -550,37 +552,39 @@ export const ChecklistDashboard: React.FC = () => {
               className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2 font-bold text-gray-700 focus:ring-2 focus:ring-samu-blue/20 outline-none" 
             />
           </div>
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Registro (CRM/COREN/MAT)</label>
-            <input 
-              value={formData.registro} 
-              onChange={(e) => setFormData(f => ({ ...f, registro: e.target.value }))}
-              placeholder="Ex: COREN 123456"
-              className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2 font-bold text-gray-700 focus:ring-2 focus:ring-samu-blue/20 outline-none" 
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno de Plantão</label>
-            <div className="flex gap-2 mt-1">
-              {['Diurno', 'Noturno'].map(t => {
-                const Icon = t === 'Diurno' ? Sun : Moon;
-                const isActive = formData.turno === t;
-                const activeStyles = t === 'Diurno' 
-                  ? 'bg-amber-400 text-white shadow-lg shadow-amber-200 ring-2 ring-amber-100' 
-                  : 'bg-indigo-900 text-white shadow-lg shadow-indigo-200 ring-2 ring-indigo-100';
-                
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setFormData(f => ({ ...f, turno: t }))}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all transform active:scale-95 ${isActive ? activeStyles : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
-                  >
-                    <Icon size={14} className={isActive ? 'animate-pulse' : ''} />
-                    {t}
-                  </button>
-                );
-              })}
+          <div className="grid grid-cols-2 md:contents gap-4">
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Registro (CRM/COREN/MAT)</label>
+              <input 
+                value={formData.registro} 
+                onChange={(e) => setFormData(f => ({ ...f, registro: e.target.value }))}
+                placeholder="Ex: COREN 123456"
+                className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2 font-bold text-gray-700 focus:ring-2 focus:ring-samu-blue/20 outline-none" 
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno de Plantão</label>
+              <div className="flex gap-2 mt-1">
+                {['Diurno', 'Noturno'].map(t => {
+                  const Icon = t === 'Diurno' ? Sun : Moon;
+                  const isActive = formData.turno === t;
+                  const activeStyles = t === 'Diurno' 
+                    ? 'bg-amber-400 text-white shadow-lg shadow-amber-200 ring-2 ring-amber-100' 
+                    : 'bg-indigo-900 text-white shadow-lg shadow-indigo-200 ring-2 ring-indigo-100';
+                  
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFormData(f => ({ ...f, turno: t }))}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-widest transition-all transform active:scale-95 ${isActive ? activeStyles : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                    >
+                      <Icon size={12} className={isActive ? 'animate-pulse' : ''} />
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -934,16 +938,16 @@ export const ChecklistDashboard: React.FC = () => {
               </button>
               {profile?.role === 'coordenacao' && (
                 <button 
-                  onClick={() => {
+                  onClick={async () => {
                     if (window.confirm('Excluir este registro permanentemente?')) {
-                      const savedHistory = localStorage.getItem('samu_checklists_history');
-                      if (savedHistory) {
-                        const historyList = JSON.parse(savedHistory);
-                        const newList = historyList.filter((e: any) => e.id !== viewingEntry.id);
-                        localStorage.setItem('samu_checklists_history', JSON.stringify(newList));
-                        setHistory(newList);
+                      try {
+                        await deleteDoc(doc(db, 'checklists', viewingEntry!.id));
+                        setViewingEntry(null);
+                        showToastMessage('Registro excluído com sucesso!');
+                      } catch (err) {
+                        handleFirestoreError(err, OperationType.DELETE, `checklists/${viewingEntry?.id}`);
+                        showToastMessage('Erro ao excluir registro.', 'error');
                       }
-                      setViewingEntry(null);
                     }
                   }}
                   className="p-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all"

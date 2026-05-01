@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { Trash2, Users, FileText, AlertTriangle } from 'lucide-react';
+import { collection, query, onSnapshot, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { db } from './lib/firebase';
+import { handleFirestoreError, OperationType } from './lib/firestoreUtils';
 
 export const AdminPanel: React.FC = () => {
   const { profile } = useAuth();
@@ -12,27 +15,39 @@ export const AdminPanel: React.FC = () => {
   useEffect(() => {
     if (profile?.role !== 'coordenacao') return;
 
-    const loadData = () => {
-      const savedUsers = localStorage.getItem('samu_registered_users');
-      const usersList = savedUsers ? JSON.parse(savedUsers) : [];
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersList = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
       setUsers(usersList.map((u: any) => ({
-        id: u.uid || u.id,
+        id: u.id,
         name: u.name,
         email: u.email,
         cargo: u.cargo || u.role,
         cpf: u.cpf || 'Não inf.',
         role: u.role
       })));
-
-      const savedPermutas = localStorage.getItem('samu_permutas');
-      setPermutas(savedPermutas ? JSON.parse(savedPermutas) : []);
-      
       setLoading(false);
-    };
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'users');
+    });
 
-    loadData();
-    const interval = setInterval(loadData, 5000);
-    return () => clearInterval(interval);
+    const qPermutas = query(collection(db, 'permutas'), orderBy('createdAt', 'desc'));
+    const unsubPermutas = onSnapshot(qPermutas, (snapshot) => {
+      const permutasList = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+      setPermutas(permutasList);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'permutas');
+    });
+
+    return () => {
+      unsubUsers();
+      unsubPermutas();
+    };
   }, [profile]);
 
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'user' | 'permuta', id: string, message: string } | null>(null);
@@ -41,7 +56,7 @@ export const AdminPanel: React.FC = () => {
     setConfirmDelete({
       type: 'user',
       id: userId,
-      message: 'Tem certeza que deseja excluir este usuário localmente?'
+      message: 'Tem certeza que deseja excluir o perfil deste usuário permanentemente no Firestore?'
     });
   };
 
@@ -49,7 +64,7 @@ export const AdminPanel: React.FC = () => {
     setConfirmDelete({
       type: 'permuta',
       id: permutaId,
-      message: 'Tem certeza que deseja excluir esta permuta localmente?'
+      message: 'Tem certeza que deseja excluir esta permuta permanentemente?'
     });
   };
 
@@ -57,25 +72,11 @@ export const AdminPanel: React.FC = () => {
     if (!confirmDelete) return;
     
     try {
-      if (confirmDelete.type === 'user') {
-        const savedUsers = localStorage.getItem('samu_registered_users');
-        if (savedUsers) {
-          const registry = JSON.parse(savedUsers);
-          const newList = registry.filter((u: any) => (u.uid || u.id) !== confirmDelete.id);
-          localStorage.setItem('samu_registered_users', JSON.stringify(newList));
-        }
-        window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Usuário excluído localmente.' }));
-      } else {
-        const savedPermutas = localStorage.getItem('samu_permutas');
-        if (savedPermutas) {
-          const allPermutas = JSON.parse(savedPermutas);
-          const newList = allPermutas.filter((p: any) => p.id !== confirmDelete.id);
-          localStorage.setItem('samu_permutas', JSON.stringify(newList));
-        }
-        window.dispatchEvent(new CustomEvent('show-success-toast', { detail: 'Permuta excluída localmente.' }));
-      }
+      const path = confirmDelete.type === 'user' ? 'users' : 'permutas';
+      await deleteDoc(doc(db, path, confirmDelete.id));
+      window.dispatchEvent(new CustomEvent('show-success-toast', { detail: `${confirmDelete.type === 'user' ? 'Usuário' : 'Permuta'} excluído(a) com sucesso.` }));
     } catch (error) {
-      console.error(error);
+      handleFirestoreError(error, OperationType.DELETE, `${confirmDelete.type === 'user' ? 'users' : 'permutas'}/${confirmDelete.id}`);
     } finally {
       setConfirmDelete(null);
     }

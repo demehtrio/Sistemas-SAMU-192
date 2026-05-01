@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Store user profile data like CRM, name, role, etc.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["servidor", "coordenacao"] },
+        "registration": { "type": "string" },
+        "cargo": { "type": "string" },
+        "base": { "type": "string" },
+        "cpf": { "type": "string" },
+        "coren": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Permuta": {
+      "title": "Permuta",
+      "description": "Permuta request between professionals",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "status": { "type": "string", "enum": ["pendente", "aprovada", "rejeitada", "pendente_coordenacao"] },
+        "requesterId": { "type": "string" },
+        "requesterName": { "type": "string" },
+        "requesterRole": { "type": "string" },
+        "substituteId": { "type": "string" },
+        "substituteName": { "type": "string" },
+        "substituteRole": { "type": "string" },
+        "date": { "type": "string" },
+        "shift": { "type": "string" },
+        "requesterDate": { "type": "string" },
+        "requesterShift": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "requesterSignedAt": { "type": "string" },
+        "substituteSignedAt": { "type": "string" },
+        "coordinatorSignedAt": { "type": "string" }
+      }
+    },
+    "Checklist": {
+      "title": "Checklist",
+      "description": "Vehicle checklist",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "enfermeiro": { "type": "string" },
+        "type": { "type": "string" },
+        "date": { "type": "string" },
+        "checkedItems": { "type": "object" },
+        "outros": { "type": "object" },
+        "status": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/permutas/{permutaId}": {
+      "schema": "Permuta",
+      "description": "Permuta requests"
+    },
+    "/checklists/{checklistId}": {
+      "schema": "Checklist",
+      "description": "Vehicle checklists"
+    }
+  }
+}

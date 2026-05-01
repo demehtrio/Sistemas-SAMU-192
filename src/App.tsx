@@ -9,7 +9,8 @@ import { Home } from './Home';
 import { SamuLogo } from './components/SamuLogo';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { profile, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const location = window.location;
 
   if (loading) {
     return (
@@ -19,8 +20,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
   }
 
-  if (!profile) {
+  if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // If logged in with Google but no profile, redirect to registration
+  // We check the hash because we are using HashRouter
+  if (!profile && !location.hash.includes('register')) {
+    return <Navigate to="/register" replace />;
   }
 
   return <>{children}</>;
