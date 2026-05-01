@@ -562,15 +562,25 @@ export const ChecklistDashboard: React.FC = () => {
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Turno de Plantão</label>
             <div className="flex gap-2 mt-1">
-              {['Diurno', 'Noturno'].map(t => (
-                <button
-                  key={t}
-                  onClick={() => setFormData(f => ({ ...f, turno: t }))}
-                  className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase transition-all ${formData.turno === t ? (checklistType === 'USA' ? 'bg-samu-red' : 'bg-samu-orange') + ' text-white shadow-md' : 'bg-gray-50 text-gray-400'}`}
-                >
-                  {t}
-                </button>
-              ))}
+              {['Diurno', 'Noturno'].map(t => {
+                const Icon = t === 'Diurno' ? Sun : Moon;
+                const isActive = formData.turno === t;
+                const activeStyles = t === 'Diurno' 
+                  ? 'bg-amber-400 text-white shadow-lg shadow-amber-200 ring-2 ring-amber-100' 
+                  : 'bg-indigo-900 text-white shadow-lg shadow-indigo-200 ring-2 ring-indigo-100';
+                
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setFormData(f => ({ ...f, turno: t }))}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all transform active:scale-95 ${isActive ? activeStyles : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                  >
+                    <Icon size={14} className={isActive ? 'animate-pulse' : ''} />
+                    {t}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

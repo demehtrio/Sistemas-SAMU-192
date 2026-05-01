@@ -267,7 +267,8 @@ export const generatePDF = async (permuta: any) => {
 
   let sigY = 160;
   if (permuta.requesterSignedAt) {
-    const id = `${permuta.requesterCoren ? `${permuta.requesterCoren} / ` : ''}CPF ${permuta.requesterCpf || ''}`;
+    const formattedReg = permuta.requesterCoren ? (permuta.requesterCoren.toUpperCase().includes('CPF') ? permuta.requesterCoren : `${permuta.requesterCoren} / `) : '';
+    const id = `${formattedReg}CPF ${permuta.requesterCpf || ''}`;
     drawSignature(20, sigY, permuta.requesterName, id, permuta.requesterSignedAt);
     sigY += 25;
   } else {
@@ -282,7 +283,8 @@ export const generatePDF = async (permuta: any) => {
   }
   
   if (permuta.substituteSignedAt) {
-    const id = `${permuta.substituteCoren ? `${permuta.substituteCoren} / ` : ''}CPF ${permuta.substituteCpf || ''}`;
+    const formattedReg = permuta.substituteCoren ? (permuta.substituteCoren.toUpperCase().includes('CPF') ? permuta.substituteCoren : `${permuta.substituteCoren} / `) : '';
+    const id = `${formattedReg}CPF ${permuta.substituteCpf || ''}`;
     drawSignature(20, sigY, permuta.substituteName, id, permuta.substituteSignedAt);
     sigY += 25;
   } else {
@@ -297,7 +299,8 @@ export const generatePDF = async (permuta: any) => {
   }
   
   if (permuta.coordinatorSignedAt) {
-    const id = `${permuta.coordinatorCoren ? `${permuta.coordinatorCoren} / ` : ''}CPF ${permuta.coordinatorCpf || ''}`;
+    const formattedReg = permuta.coordinatorCoren ? (permuta.coordinatorCoren.toUpperCase().includes('CPF') ? permuta.coordinatorCoren : `${permuta.coordinatorCoren} / `) : '';
+    const id = `${formattedReg}CPF ${permuta.coordinatorCpf || ''}`;
     drawSignature(20, sigY, `COORDENAÇÃO: ${permuta.coordinatorName}`, id, permuta.coordinatorSignedAt);
   } else {
     doc.setDrawColor(0, 0, 0);
@@ -432,13 +435,13 @@ const Dashboard: React.FC = () => {
         updateData.coordinatorSignedAt = new Date().toISOString();
         updateData.coordinatorName = profile.name;
         updateData.coordinatorCpf = profile.cpf || '';
-        updateData.coordinatorCoren = profile.coren || '';
+        updateData.coordinatorCoren = profile.registration || profile.coren || '';
       } else {
         if (signingStatus === 'approved') {
           updateData.status = 'pendente_coordenacao';
           updateData.substituteSignedAt = new Date().toISOString();
           updateData.substituteCpf = profile.cpf || '';
-          updateData.substituteCoren = profile.coren || '';
+          updateData.substituteCoren = profile.registration || profile.coren || '';
         }
       }
 
@@ -1236,7 +1239,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
       cargo: u.cargo || u.role,
       base: u.base || 'Serra Talhada',
       cpf: u.cpf,
-      coren: u.coren
+      coren: u.registration || u.coren || ''
     }));
 
     setUsers(mappedUsers.filter((u: any) => u.id !== profile?.uid));
@@ -1261,7 +1264,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
         requesterDate,
         requesterShift,
         requesterCpf: profile.cpf || '',
-        requesterCoren: profile.coren || '',
+        requesterCoren: profile.registration || profile.coren || '',
         substituteId: substitute.id,
         substituteName: substitute.name,
         substituteRole,
@@ -1306,7 +1309,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
       requesterName: profile!.name,
       requesterRole,
       requesterCpf: profile!.cpf || '',
-      requesterCoren: profile!.coren || '',
+      requesterCoren: profile!.registration || profile!.coren || '',
       requesterDate,
       requesterShift,
       substituteId: substitute.id,
@@ -1435,7 +1438,7 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
                     >
                       <option value="">Turno...</option>
                       <option value="Diurno">Diurno</option>
-                      <option value="Noturo">Noturno</option>
+                      <option value="Noturno">Noturno</option>
                       <option value="Plantão 24h">Plantão 24h</option>
                     </select>
                   </div>
