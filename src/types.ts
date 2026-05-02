@@ -79,5 +79,6 @@ export interface VehicleChecklistData {
     [key: string]: string | boolean;
   };
   observacoes: string;
+  photos?: string[];
   createdAt: any;
 }

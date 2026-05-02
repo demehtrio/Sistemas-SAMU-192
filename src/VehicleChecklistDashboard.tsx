@@ -346,12 +346,22 @@ export const VehicleChecklistDashboard: React.FC = () => {
         kmFinal: formData.kmFinal,
         date: new Date().toISOString(),
         checks: checkedItems,
-        observacoes: formData.observacoes
+        observacoes: formData.observacoes,
+        photos: photos
       };
 
       // Header
       doc.setFillColor(255, 122, 0); // samu-orange
       doc.rect(0, 0, 210, 40, 'F');
+      
+      // Add Logo to PDF
+      try {
+        const logoUrl = "https://i.pinimg.com/originals/cb/b0/f4/cbb0f4c4a7e05d4635ec4c53c6e26baf.png";
+        doc.addImage(logoUrl, 'PNG', 10, 5, 25, 30);
+      } catch (e) {
+        console.error("Could not add logo to PDF", e);
+      }
+
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
@@ -418,6 +428,31 @@ export const VehicleChecklistDashboard: React.FC = () => {
         doc.setFont("helvetica", "normal");
         const splitObs = doc.splitTextToSize(currentData.observacoes, 170);
         doc.text(splitObs, 20, yPos);
+        yPos += (splitObs.length * 6) + 10;
+      }
+
+      // Add Photos to PDF
+      if (currentData.photos && currentData.photos.length > 0) {
+        doc.addPage();
+        yPos = 20;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("REGISTRO FOTOGRÁFICO", 105, yPos, { align: "center" });
+        yPos += 15;
+
+        for (const photo of currentData.photos) {
+          if (yPos > 240) {
+            doc.addPage();
+            yPos = 20;
+          }
+          try {
+            // Photos are base64, add them
+            doc.addImage(photo, 'JPEG', 40, yPos, 130, 90);
+            yPos += 100;
+          } catch (e) {
+            console.error("Error adding photo to PDF", e);
+          }
+        }
       }
 
       doc.save(`Checklist_VTR_${currentData.prefixoPlaca}_${format(new Date(currentData.date), 'yyyyMMdd')}.pdf`);
@@ -793,6 +828,19 @@ export const VehicleChecklistDashboard: React.FC = () => {
                      <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
                         <p className="text-[10px] font-black uppercase text-amber-600 mb-1">Observações</p>
                         <p className="text-xs font-bold text-amber-900">{viewingEntry.observacoes}</p>
+                     </div>
+                   )}
+
+                   {viewingEntry.photos && viewingEntry.photos.length > 0 && (
+                     <div className="pt-4 border-t border-gray-100">
+                       <h4 className="text-[10px] font-black uppercase text-samu-blue mb-3 flex items-center gap-2">
+                         <Camera size={14} /> Registro Fotográfico
+                       </h4>
+                       <div className="grid grid-cols-2 gap-3">
+                          {viewingEntry.photos.map((p, i) => (
+                            <img key={i} src={p} alt="Viatura" className="w-full aspect-video object-cover rounded-xl shadow-sm border border-gray-100" />
+                          ))}
+                       </div>
                      </div>
                    )}
                 </div>
