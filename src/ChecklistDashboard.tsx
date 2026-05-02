@@ -316,12 +316,23 @@ export const ChecklistDashboard: React.FC = () => {
       // Header
       doc.setFillColor(0, 0, 128); // Navy Blue (matches samu-blue)
       doc.rect(0, 0, 210, 40, 'F');
+      
+      // Add Logo to PDF
+      try {
+        const logoUrl = "https://i.pinimg.com/originals/cb/b0/f4/cbb0f4c4a7e05d4635ec4c53c6e26baf.png";
+        doc.addImage(logoUrl, 'PNG', 10, 5, 25, 30);
+      } catch (e) {
+        console.error("Could not add logo to PDF", e);
+      }
+
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.text("SAMU 192", 105, 20, { align: "center" });
+      doc.text("SAMU 192", 105, 18, { align: "center" });
       doc.setFontSize(14);
-      doc.text(`CHECKLIST DE SALÃO - ${currentData.type}`, 105, 30, { align: "center" });
+      doc.text(`CHECKLIST DE SALÃO - ${currentData.type}`, 105, 26, { align: "center" });
+      doc.setFontSize(12);
+      doc.text("Base Serra Talhada", 105, 33, { align: "center" });
 
       // Info Section
       doc.setTextColor(0, 0, 0);

@@ -365,9 +365,11 @@ export const VehicleChecklistDashboard: React.FC = () => {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.text("SAMU 192", 105, 20, { align: "center" });
+      doc.text("SAMU 192", 105, 18, { align: "center" });
       doc.setFontSize(14);
-      doc.text("CHECKLIST DE VIATURA - MANUTENÇÃO", 105, 30, { align: "center" });
+      doc.text("CHECKLIST DE VIATURA - MANUTENÇÃO", 105, 26, { align: "center" });
+      doc.setFontSize(12);
+      doc.text("Base Serra Talhada", 105, 33, { align: "center" });
 
       // Info
       doc.setTextColor(0, 0, 0);

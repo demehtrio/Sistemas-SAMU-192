@@ -14,12 +14,20 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
         style={{ minHeight: '1131px', position: 'absolute', top: '-10000px', left: '-10000px' }}
       >
         {/* Header */}
-        <div className="text-center border-b-2 border-black pb-6 mb-8">
+        <div className="text-center border-b-2 border-black pb-6 mb-8 flex flex-col items-center">
+          <img 
+            src="https://i.pinimg.com/originals/cb/b0/f4/cbb0f4c4a7e05d4635ec4c53c6e26baf.png" 
+            alt="SAMU Logo" 
+            className="h-24 mb-4 object-contain"
+          />
           <h1 className="text-2xl font-bold uppercase tracking-wider mb-2">
             Serviço de Atendimento Móvel de Urgência
           </h1>
           <h2 className="text-xl font-bold text-red-600 tracking-widest">SAMU 192</h2>
-          <p className="text-sm mt-2 text-gray-600">
+          <p className="text-sm mt-1 font-bold text-gray-800">
+            Base Serra Talhada
+          </p>
+          <p className="text-xs mt-1 text-gray-500">
             Coordenação Geral de Urgência e Emergência
           </p>
         </div>
