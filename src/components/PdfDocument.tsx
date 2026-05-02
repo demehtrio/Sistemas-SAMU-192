@@ -16,17 +16,17 @@ export const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
         {/* Header */}
         <div className="text-center border-b-2 border-black pb-6 mb-8 flex flex-col items-center">
           <img 
-            src="https://i.pinimg.com/originals/cb/b0/f4/cbb0f4c4a7e05d4635ec4c53c6e26baf.png" 
+            src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_SAMU_192.png" 
             alt="SAMU Logo" 
             className="h-24 mb-4 object-contain"
           />
-          <h1 className="text-2xl font-bold uppercase tracking-wider mb-2">
-            Serviço de Atendimento Móvel de Urgência
-          </h1>
-          <h2 className="text-xl font-bold text-red-600 tracking-widest">SAMU 192</h2>
-          <p className="text-sm mt-1 font-bold text-gray-800">
+          <h2 className="text-3xl font-black text-red-600 tracking-tight">SAMU 192</h2>
+          <p className="text-lg font-bold text-gray-800 tracking-tight">
             Base Serra Talhada
           </p>
+          <h1 className="text-sm font-bold uppercase tracking-wider mt-2 mb-1">
+            Serviço de Atendimento Móvel de Urgência
+          </h1>
           <p className="text-xs mt-1 text-gray-500">
             Coordenação Geral de Urgência e Emergência
           </p>

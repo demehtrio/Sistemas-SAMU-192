@@ -334,6 +334,28 @@ export const VehicleChecklistDashboard: React.FC = () => {
     }
   };
 
+  // Helper to load image as base64
+  const loadImage = (url: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('Could not load image'));
+      img.src = url;
+    });
+  };
+
   const generatePDF = async (dataToUse?: any) => {
     setIsGeneratingPdf(true);
     try {
@@ -356,8 +378,9 @@ export const VehicleChecklistDashboard: React.FC = () => {
       
       // Add Logo to PDF
       try {
-        const logoUrl = "https://i.pinimg.com/originals/cb/b0/f4/cbb0f4c4a7e05d4635ec4c53c6e26baf.png";
-        doc.addImage(logoUrl, 'PNG', 10, 5, 25, 30);
+        const logoUrl = "https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_SAMU_192.png";
+        const logoBase64 = await loadImage(logoUrl);
+        doc.addImage(logoBase64, 'PNG', 15, 5, 25, 30);
       } catch (e) {
         console.error("Could not add logo to PDF", e);
       }
@@ -367,9 +390,9 @@ export const VehicleChecklistDashboard: React.FC = () => {
       doc.setFont("helvetica", "bold");
       doc.text("SAMU 192", 105, 18, { align: "center" });
       doc.setFontSize(14);
-      doc.text("CHECKLIST DE VIATURA - MANUTENÇÃO", 105, 26, { align: "center" });
+      doc.text("Base Serra Talhada", 105, 26, { align: "center" });
       doc.setFontSize(12);
-      doc.text("Base Serra Talhada", 105, 33, { align: "center" });
+      doc.text("CHECKLIST DE VIATURA - MANUTENÇÃO", 105, 33, { align: "center" });
 
       // Info
       doc.setTextColor(0, 0, 0);

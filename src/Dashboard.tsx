@@ -171,11 +171,15 @@ export const generatePDF = async (permuta: any) => {
   doc.setFontSize(18);
   doc.setTextColor(200, 16, 46); // SAMU Red
   doc.setFont('helvetica', 'bold');
-  doc.text('Termo de Permuta - SAMU 192', 105, 25, { align: 'center' });
+  doc.text('SAMU 192', 105, 15, { align: 'center' });
+  doc.setFontSize(14);
+  doc.text('Base Serra Talhada', 105, 23, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text('Termo de Permuta', 105, 31, { align: 'center' });
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
   doc.setFont('helvetica', 'bold');
-  doc.text('BASE SERRA TALHADA - PE', 105, 33, { align: 'center' });
+  doc.text('COORDENAÇÃO DE FROTA', 105, 38, { align: 'center' });
   
   // Thin red line
   doc.setDrawColor(200, 16, 46);
