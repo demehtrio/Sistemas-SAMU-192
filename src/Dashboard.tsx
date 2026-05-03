@@ -1,8 +1,8 @@
-import React, { useState, useEffect, Component } from 'react';
+import React, { useState, useEffect, Component, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance, AlertTriangle, Trash2, AlertCircle, ArrowLeft, History } from 'lucide-react';
+import { Check, X, Clock, Plus, FileText, MessageCircle, Mail, Inbox, Send, LogOut, User, PlusCircle, Ambulance, AlertTriangle, Trash2, AlertCircle, ArrowLeft, History, Bell, BellDot } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { twMerge } from 'tailwind-merge';
 import { AdminPanel } from './AdminPanel';
@@ -176,10 +176,6 @@ export const generatePDF = async (permuta: any) => {
   doc.text('Base Serra Talhada', 105, 23, { align: 'center' });
   doc.setFontSize(12);
   doc.text('Termo de Permuta', 105, 31, { align: 'center' });
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont('helvetica', 'bold');
-  doc.text('COORDENAÇÃO DE FROTA', 105, 38, { align: 'center' });
   
   // Thin red line
   doc.setDrawColor(200, 16, 46);
@@ -370,7 +366,7 @@ const Dashboard: React.FC = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allPermutas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      setMinhasPermutas(allPermutas.filter((p: any) => p.requesterId === profile.uid && p.status !== 'aprovada'));
+      setMinhasPermutas(allPermutas.filter((p: any) => p.requesterId === profile.uid && p.status !== 'aprovada' && p.status !== 'rejeitada'));
       setPermutasRecebidas(allPermutas.filter((p: any) => 
         p.substituteId === profile.uid && 
         p.status === 'pendente_substituto'
@@ -381,7 +377,7 @@ const Dashboard: React.FC = () => {
       }
 
       setPermutasAprovadas(allPermutas.filter((p: any) => 
-        (p.status === 'aprovada' || p.status === 'approved') && 
+        (p.status === 'aprovada' || p.status === 'approved' || p.status === 'rejeitada') && 
         (profile.role === 'coordenacao' || p.requesterId === profile.uid || p.substituteId === profile.uid)
       ));
     }, (error) => {
@@ -390,6 +386,94 @@ const Dashboard: React.FC = () => {
 
     return () => unsubscribe();
   }, [profile]);
+
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const lastNotifId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    const q = query(
+      collection(db, 'notifications'), 
+      where('userId', '==', profile.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Trigger system notification for new unread messages
+      if (docs.length > 0) {
+        const latest: any = docs[0];
+        // Only notify if it's a new ID we haven't seen in this session AND it's unread
+        // AND it's relatively recent (created in the last 1 minute) to avoid old notif spam on login
+        const isRecent = (new Date().getTime() - new Date(latest.createdAt).getTime()) < 60000;
+        
+        if (latest.id !== lastNotifId.current && !latest.read && isRecent) {
+          lastNotifId.current = latest.id;
+          
+          if ("Notification" in window && Notification.permission === "granted") {
+            try {
+              new Notification(latest.title, {
+                body: latest.message,
+                icon: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_SAMU_192.png'
+              });
+            } catch (e) {
+              console.error("Browser notification failed:", e);
+            }
+          }
+        }
+      }
+
+      setNotifications(docs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'notifications');
+    });
+
+    return () => unsubscribe();
+  }, [profile]);
+
+  const markNotificationAsRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'notifications', id), { read: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const createNotification = async (recipientId: string, title: string, message: string, permutaId?: string) => {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        userId: recipientId,
+        title,
+        message,
+        read: false,
+        permutaId: permutaId || '',
+        createdAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error creating notification:", error);
+    }
+  };
+
+  const notifyCoordination = async (title: string, message: string, permutaId?: string) => {
+    try {
+      const q = query(collection(db, 'users'), where('role', '==', 'coordenacao'));
+      const snapshot = await getDocs(q);
+      snapshot.forEach((userDoc) => {
+        createNotification(userDoc.id, title, message, permutaId);
+      });
+    } catch (error) {
+      console.error("Error notifying coordination:", error);
+    }
+  };
 
   const initiateSign = (permutaId: string, status: 'approved' | 'rejected') => {
     setSigningPermutaId(permutaId);
@@ -428,6 +512,27 @@ const Dashboard: React.FC = () => {
 
       await updateDoc(doc(db, 'permutas', signingPermutaId), updateData);
       
+      // Get the current permuta state to notify users
+      const permutaDoc = await getDocs(query(collection(db, 'permutas'), where('__name__', '==', signingPermutaId)));
+      const permuta: any = permutaDoc.docs[0]?.data();
+
+      if (profile.role === 'coordenacao') {
+        // Notify both requester and substitute
+        const statusText = signingStatus === 'approved' ? 'APROVADA' : 'REJEITADA';
+        const msg = `Sua permuta do dia ${permuta.date} foi ${statusText} pela coordenação.`;
+        await createNotification(permuta.requesterId, 'Status de Permuta', msg, signingPermutaId);
+        await createNotification(permuta.substituteId, 'Status de Permuta', msg, signingPermutaId);
+      } else {
+        if (signingStatus === 'approved') {
+          // Notify requester and coordination
+          await createNotification(permuta.requesterId, 'Permuta Aceita', `O colega ${profile.name} aceitou sua solicitação de permuta para o dia ${permuta.date}. Aguardando coordenação.`, signingPermutaId);
+          await notifyCoordination('Nova Permuta para Assinar', `Uma nova permuta entre ${permuta.requesterName} e ${permuta.substituteName} aguarda sua aprovação.`, signingPermutaId);
+        } else {
+          // Notify requester about rejection
+          await createNotification(permuta.requesterId, 'Permuta Recusada', `O colega ${profile.name} recusou sua solicitação de permuta para o dia ${permuta.date}.`, signingPermutaId);
+        }
+      }
+
       setSigningPermutaId(null);
       setSigningStatus(null);
       window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta assinada com sucesso!" }));
@@ -560,8 +665,101 @@ const Dashboard: React.FC = () => {
                 <span className="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase mt-1">Serra Talhada / PE</span>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
-              {profile?.role === 'coordenacao' && (
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-600 transition-all border border-transparent hover:border-slate-200 relative"
+                  >
+                    {notifications.some(n => !n.read) ? (
+                      <BellDot className="h-6 w-6 text-samu-red animate-pulse" />
+                    ) : (
+                      <Bell className="h-6 w-6" />
+                    )}
+                    {notifications.filter(n => !n.read).length > 0 && (
+                      <span className="absolute top-1.5 right-1.5 h-4 w-4 bg-samu-red text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white">
+                        {notifications.filter(n => !n.read).length}
+                      </span>
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {showNotifications && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-[60]"
+                      >
+                        <div className="p-5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                          <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Notificações</h4>
+                          <span className="text-[10px] font-bold text-slate-400">{notifications.length} registros</span>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                          {notifications.length === 0 ? (
+                            <div className="p-8 text-center">
+                              <Bell className="h-8 w-8 text-slate-200 mx-auto mb-3" />
+                              <p className="text-xs text-slate-400 font-medium italic">Nenhum aviso no momento.</p>
+                            </div>
+                          ) : (
+                            <ul className="divide-y divide-slate-50">
+                              {notifications.map((n) => (
+                                <li 
+                                  key={n.id} 
+                                  className={twMerge(
+                                    "p-4 transition-all hover:bg-slate-50 cursor-pointer",
+                                    !n.read ? "bg-blue-50/30" : ""
+                                  )}
+                                  onClick={() => {
+                                    markNotificationAsRead(n.id);
+                                    setShowNotifications(false);
+                                  }}
+                                >
+                                  <div className="flex items-start space-x-3">
+                                    <div className={twMerge(
+                                      "p-2 rounded-xl shrink-0",
+                                      !n.read ? "bg-samu-blue text-white" : "bg-slate-100 text-slate-400"
+                                    )}>
+                                      <Mail className="h-3.5 w-3.5" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-xs font-black text-slate-900 leading-tight">{n.title}</p>
+                                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                        {n.message}
+                                      </p>
+                                      <p className="text-[9px] text-slate-300 mt-2 font-bold uppercase tracking-tighter">
+                                        {new Date(n.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                      </p>
+                                    </div>
+                                    {!n.read && (
+                                      <div className="w-2 h-2 bg-samu-red rounded-full mt-1 shrink-0" />
+                                    )}
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        {notifications.length > 0 && (
+                          <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
+                            <button
+                              onClick={async () => {
+                                for(const n of notifications.filter(n => !n.read)) {
+                                  await markNotificationAsRead(n.id);
+                                }
+                              }}
+                              className="text-[9px] font-black text-samu-blue uppercase tracking-widest hover:underline"
+                            >
+                              Marcar todas como lidas
+                            </button>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {profile?.role === 'coordenacao' && (
                 <button
                   onClick={() => {
                     setIsAdminView(!isAdminView);
@@ -1268,7 +1466,21 @@ const CreatePermuta: React.FC<{ onCancel: () => void }> = ({ onCancel }) => {
         createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'permutas'), newPermuta);
+      const docRef = await addDoc(collection(db, 'permutas'), newPermuta);
+
+      // Create Notification for substitute
+      try {
+        await addDoc(collection(db, 'notifications'), {
+          userId: substitute.id,
+          title: 'Nova Solicitação de Permuta',
+          message: `O colega ${profile.name} solicitou uma troca com você para o dia ${date}.`,
+          read: false,
+          permutaId: docRef.id,
+          createdAt: new Date().toISOString()
+        });
+      } catch (e) {
+        console.error("Error creating notification helper:", e);
+      }
 
       window.dispatchEvent(new CustomEvent('show-success-toast', { detail: "Permuta solicitada com sucesso!" }));
       onCancel();

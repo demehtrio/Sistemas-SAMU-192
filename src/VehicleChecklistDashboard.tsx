@@ -42,6 +42,7 @@ import {
   Zap,
   Coffee,
   LifeBuoy,
+  Activity,
   FileSearch,
   Droplet,
   Fuel,
@@ -68,8 +69,28 @@ import { VehicleChecklistData } from './types';
 
 const vehicleChecklistStructure = [
   {
+    id: 'seguranca',
+    title: '1. Pneus e Rodagem',
+    icon: LifeBuoy,
+    items: [
+      { 
+        id: 'estado_pneus', 
+        label: 'Estado dos Pneus', 
+        type: 'select', 
+        options: [
+          'Novos (Sulcos profundos)', 
+          'Meia-vida (Desgaste moderado)', 
+          'Baixo/Careca (Requer troca imediata!)'
+        ] 
+      },
+      { id: 'calibragem_pneus', label: 'Calibragem (Verificada e ajustada)', type: 'boolean' },
+      { id: 'estepe_estado', label: 'Estepe (Presente, calibrado e em uso)', type: 'boolean' },
+      { id: 'avarias_pneus', label: 'Ausência de Bolhas/Cortes', type: 'boolean' }
+    ]
+  },
+  {
     id: 'motor',
-    title: '1. Motor e Fluidos',
+    title: '2. Motor e Fluidos',
     icon: Droplet,
     items: [
       { 
@@ -100,10 +121,10 @@ const vehicleChecklistStructure = [
   },
   {
     id: 'eletrico',
-    title: '2. Sistema Elétrico, Iluminação e Comunicação',
+    title: '3. Iluminação e Sinalização',
     icon: Zap,
     items: [
-      // 2.1 Sinalização de Emergência e Comunicação
+      // 3.1 Sinalização de Emergência e Comunicação
       { id: 'giroflex', label: 'Giroflex / Barra de Luzes (LEDs)', type: 'boolean' },
       { id: 'strobos', label: 'Strobos / Flashers (Grade/Traseira)', type: 'boolean' },
       { id: 'sirene', label: 'Sirene (Tons e Megafone/PTT)', type: 'boolean' },
@@ -111,7 +132,7 @@ const vehicleChecklistStructure = [
       { id: 'radio_fixo', label: 'Rádio Transmissor Fixo (Central)', type: 'boolean' },
       { id: 'radio_ht', label: 'Rádio Portátil HT (Bateria/Sinal)', type: 'boolean' },
       
-      // 2.2 Iluminação Padrão
+      // 3.2 Iluminação Padrão
       { id: 'farois', label: 'Faróis (Foco Baixo e Alto)', type: 'boolean' },
       { id: 'luzes_posicao', label: 'Lanternas (Posição)', type: 'boolean' },
       { id: 'setas', label: 'Sinalização de Direção (Setas)', type: 'boolean' },
@@ -119,7 +140,7 @@ const vehicleChecklistStructure = [
       { id: 'luz_re', label: 'Luz de Ré (Luz e Alerta Sonoro)', type: 'boolean' },
       { id: 'luz_placa', label: 'Luz de Placa', type: 'boolean' },
 
-      // 2.3 Cabine e Salão
+      // 3.3 Cabine e Salão
       { id: 'luzes_cabine', label: 'Luzes Internas da Cabine', type: 'boolean' },
       { id: 'iluminacao_salao', label: 'Iluminação Salão (Branca/Azul)', type: 'boolean' },
       { id: 'inversor_tomadas', label: 'Inversor / Tomadas 110v/220v', type: 'boolean' },
@@ -127,8 +148,25 @@ const vehicleChecklistStructure = [
     ]
   },
   {
+    id: 'painel_detalhado',
+    title: '4. Painel de Instrumentos',
+    icon: Activity,
+    items: [
+      { id: 'luz_temp_motor', label: 'Temperatura do Motor (Luz/Ponteiro)', type: 'boolean' },
+      { id: 'luz_pressao_oleo', label: 'Pressão do Óleo (Luz)', type: 'boolean' },
+      { id: 'luz_bateria', label: 'Bateria / Alternador (Luz)', type: 'boolean' },
+      { id: 'luz_freios', label: 'Sistema de Freios (Luz)', type: 'boolean' },
+      { id: 'luz_porta_aberta', label: 'Porta Aberta (Sinalização)', type: 'boolean' },
+      { id: 'luz_injecao', label: 'Injeção Eletrônica (Check Engine)', type: 'boolean' },
+      { id: 'luz_abs', label: 'ABS - Freios Anti-travamento (Luz)', type: 'boolean' },
+      { id: 'luz_combustivel', label: 'Nível de Combustível / Reserva', type: 'boolean' },
+      { id: 'luz_airbag', label: 'Sistema de Airbag (Luz)', type: 'boolean' },
+      { id: 'luz_tpms', label: 'Pressão dos Pneus - TPMS (Luz)', type: 'boolean' }
+    ]
+  },
+  {
     id: 'cabine',
-    title: '3. Cabine e Conforto',
+    title: '5. Cabine e Conforto',
     icon: Wind,
     items: [
       { 
@@ -142,12 +180,6 @@ const vehicleChecklistStructure = [
         label: 'Ar-condicionado Salão', 
         type: 'select', 
         options: ['Funcionando', 'Com defeito'] 
-      },
-      { 
-        id: 'painel_instrumentos', 
-        label: 'Painel de Instrumentos', 
-        type: 'select', 
-        options: ['Sem luzes de advertência', 'Com luzes de advertência'] 
       },
       { 
         id: 'higienizacao_interna', 
@@ -164,37 +196,8 @@ const vehicleChecklistStructure = [
     ]
   },
   {
-    id: 'seguranca',
-    title: '4. Pneus e Rodagem',
-    icon: LifeBuoy,
-    items: [
-      { 
-        id: 'estado_pneus', 
-        label: 'Estado dos Pneus', 
-        type: 'select', 
-        options: [
-          'Novos (Sulcos profundos)', 
-          'Meia-vida (Desgaste moderado)', 
-          'Baixo/Careca (Requer troca imediata!)'
-        ] 
-      },
-      { id: 'calibragem_pneus', label: 'Calibragem (Verificada e ajustada)', type: 'boolean' },
-      { id: 'estepe_estado', label: 'Estepe (Presente, calibrado e em uso)', type: 'boolean' },
-      { id: 'avarias_pneus', label: 'Ausência de Bolhas/Cortes', type: 'boolean' }
-    ]
-  },
-  {
-    id: 'documentacao',
-    title: '5. Documentação',
-    icon: FileSearch,
-    items: [
-      { id: 'documento_veiculo', label: 'Documento do Veículo (CRLV)', type: 'boolean' },
-      { id: 'cartao_abastecimento', label: 'Cartão de Abastecimento', type: 'boolean' }
-    ]
-  },
-  {
     id: 'equipamentos',
-    title: '6. Equipamentos',
+    title: '6. Equipamentos e Segurança',
     icon: Briefcase,
     items: [
       { id: 'oxigenio_1', label: 'Oxigênio 1', type: 'boolean' },
@@ -209,6 +212,15 @@ const vehicleChecklistStructure = [
       { id: 'chave_roda', label: 'Chave de Roda', type: 'boolean' },
       { id: 'extintor_cabine', label: 'Extintor Cabine', type: 'boolean' },
       { id: 'extintor_salao', label: 'Extintor de Salão', type: 'boolean' }
+    ]
+  },
+  {
+    id: 'documentacao',
+    title: '7. Documentação',
+    icon: FileSearch,
+    items: [
+      { id: 'documento_veiculo', label: 'Documento do Veículo (CRLV)', type: 'boolean' },
+      { id: 'cartao_abastecimento', label: 'Cartão de Abastecimento', type: 'boolean' }
     ]
   }
 ];
@@ -299,6 +311,13 @@ export const VehicleChecklistDashboard: React.FC = () => {
     if (!formData.prefixoPlaca || !formData.condutor || !formData.turno) {
       showToastMessage('Preencha os campos obrigatórios (Placa, Condutor, Turno).', 'error');
       return;
+    }
+
+    if (formData.kmInicial && formData.kmFinal) {
+      if (Number(formData.kmFinal) < Number(formData.kmInicial)) {
+        showToastMessage('Recusa: KM Final não pode ser menor que o KM Inicial.', 'error');
+        return;
+      }
     }
     
     setSubmitting(true);
