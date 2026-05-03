@@ -74,6 +74,20 @@
         "createdAt": { "type": "string" }
       }
     },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications for users",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "permutaId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "read", "createdAt"]
+    },
     "Config": {
       "title": "Config",
       "description": "Global settings",
@@ -101,6 +115,10 @@
     "/vehicle_checklists/{vChecklistId}": {
       "schema": "VehicleChecklist",
       "description": "Vehicle maintenance daily checklists"
+    },
+    "/notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "User notifications"
     },
     "/settings/{settingId}": {
       "schema": "Config",

@@ -16,6 +16,7 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
+  getDoc,
   serverTimestamp,
   orderBy,
   getDocs
@@ -513,8 +514,8 @@ const Dashboard: React.FC = () => {
       await updateDoc(doc(db, 'permutas', signingPermutaId), updateData);
       
       // Get the current permuta state to notify users
-      const permutaDoc = await getDocs(query(collection(db, 'permutas'), where('__name__', '==', signingPermutaId)));
-      const permuta: any = permutaDoc.docs[0]?.data();
+      const permutaSnap = await getDoc(doc(db, 'permutas', signingPermutaId));
+      const permuta: any = permutaSnap.data();
 
       if (profile.role === 'coordenacao') {
         // Notify both requester and substitute

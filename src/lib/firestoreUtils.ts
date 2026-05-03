@@ -36,7 +36,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   // Dispatch event to show error toast in the UI
   window.dispatchEvent(new CustomEvent('show-error-toast', { 
     detail: errorMessage.includes('insufficient permissions') 
-      ? 'Você não tem permissão para realizar esta ação.' 
+      ? `Sem permissão: ${operationType} em ${path || 'desconhecido'}` 
       : `Erro no sistema: ${errorMessage}`
   }));
 

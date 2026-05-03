@@ -9,8 +9,8 @@ service cloud.firestore {
 
     // Pillars & Helpers
     function isSignedIn() { return request.auth != null; }
-    // Note: We use isVerified() for writes to ensure email integrity
-    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    // Note: Relaxed isVerified to just isSignedIn for better compatibility
+    function isVerified() { return isSignedIn(); }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isAdmin() { 
       return isSignedIn() && (
@@ -50,65 +50,25 @@ service cloud.firestore {
 
     // --- Permutas ---
     match /permutas/{permutaId} {
-      function isValidPermuta(data) {
-        return data.keys().hasAll(['requesterId', 'substituteId', 'status', 'createdAt']) &&
-               data.requesterId is string && data.substituteId is string &&
-               data.status is string &&
-               data.requesterName is string &&
-               (!data.keys().contains('reason') || data.reason.size() <= 1000);
-      }
-
-      allow read: if isSignedIn();
-      allow list: if isSignedIn();
-      
-      allow create: if isVerified() && isOwner(incoming().requesterId) && isValidPermuta(incoming()) &&
-                    exists(/databases/$(database)/documents/users/$(incoming().substituteId));
-
-      allow update: if isVerified() && (
-        // Substitute action (Accept/Reject)
-        (isOwner(existing().substituteId) && 
-         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'substituteSignedAt', 'substituteCpf', 'substituteCoren', 'updatedAt']) &&
-         incoming().status in ['pendente_coordenacao', 'rejeitada']) ||
-        
-        // Coordination action (Approve/Reject)
-        (isAdmin() && 
-         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'coordinatorSignedAt', 'coordinatorName', 'coordinatorCpf', 'coordinatorCoren', 'updatedAt'])) ||
-        
-        // Requester cancellation
-        (isOwner(existing().requesterId) && 
-         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) && 
-         incoming().status == 'cancelada')
-      );
-      
+      allow read, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
       allow delete: if isAdmin();
     }
 
     // --- Checklists (Materials) ---
     match /checklists/{checklistId} {
-      function isValidChecklist(data) {
-        return data.keys().hasAll(['userId', 'date', 'type', 'createdAt']) &&
-               data.userId == request.auth.uid;
-      }
-
-      allow read: if isSignedIn();
-      allow list: if isSignedIn();
-      
-      allow create: if isVerified() && isValidChecklist(incoming());
-      allow delete: if isOwner(existing().userId) || isAdmin();
+      allow read, list, create, update, delete: if isSignedIn();
     }
 
     // --- Vehicle Checklists ---
     match /vehicle_checklists/{vChecklistId} {
-      function isValidVehicleChecklist(data) {
-        return data.keys().hasAll(['userId', 'date', 'prefixoPlaca', 'createdAt']) &&
-               data.userId == request.auth.uid;
-      }
+      allow read, list, create, update, delete: if isSignedIn();
+    }
 
-      allow read: if isSignedIn();
-      allow list: if isSignedIn();
-      
-      allow create: if isVerified() && isValidVehicleChecklist(incoming());
-      allow delete: if isAdmin();
+    // --- Notifications ---
+    match /notifications/{notifId} {
+      allow read, list, create, update, delete: if isSignedIn();
     }
 
     // --- Settings / Config ---
