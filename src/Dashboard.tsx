@@ -422,10 +422,23 @@ const Dashboard: React.FC = () => {
           
           if ("Notification" in window && Notification.permission === "granted") {
             try {
-              new Notification(latest.title, {
+              const options = {
                 body: latest.message,
-                icon: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_SAMU_192.png'
-              });
+                icon: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_SAMU_192.png',
+                vibrate: [100, 50, 100],
+                data: { permutaId: latest.permutaId }
+              };
+
+              // Try to use Service Worker registration for better PWA behavior
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                  registration.showNotification(latest.title, options);
+                }).catch(() => {
+                  new Notification(latest.title, options);
+                });
+              } else {
+                new Notification(latest.title, options);
+              }
             } catch (e) {
               console.error("Browser notification failed:", e);
             }
@@ -696,6 +709,21 @@ const Dashboard: React.FC = () => {
                           <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">Notificações</h4>
                           <span className="text-[10px] font-bold text-slate-400">{notifications.length} registros</span>
                         </div>
+                        
+                        {window.Notification && Notification.permission !== "granted" && (
+                          <div className="p-4 bg-amber-50 border-b border-amber-100">
+                            <p className="text-[10px] text-amber-800 font-bold leading-tight">
+                              ATIVE AS NOTIFICAÇÕES PARA RECEBER ALERTAS NO CELULAR
+                            </p>
+                            <button 
+                              onClick={() => Notification.requestPermission()}
+                              className="mt-2 text-[9px] font-black bg-amber-600 text-white px-3 py-1 rounded-full uppercase tracking-widest"
+                            >
+                              Ativar Agora
+                            </button>
+                          </div>
+                        )}
+
                         <div className="max-h-96 overflow-y-auto">
                           {notifications.length === 0 ? (
                             <div className="p-8 text-center">
